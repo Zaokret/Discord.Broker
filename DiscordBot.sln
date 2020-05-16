@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30002.166
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiscordBot", "DiscordBot\DiscordBot.csproj", "{0CA5FE38-BB0B-4A5A-8EC5-C529637AA12F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0CA5FE38-BB0B-4A5A-8EC5-C529637AA12F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0CA5FE38-BB0B-4A5A-8EC5-C529637AA12F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0CA5FE38-BB0B-4A5A-8EC5-C529637AA12F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0CA5FE38-BB0B-4A5A-8EC5-C529637AA12F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2056EE52-B0A4-4137-9007-08333C3CED86}
+	EndGlobalSection
+EndGlobal
