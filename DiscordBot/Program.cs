@@ -24,6 +24,7 @@ namespace DiscordBot
         public async Task MainAsync(string[] args)
         {
           await Startup.RunAsync(args);
+          await Task.Delay(-1); // Keep the program alive
         }
-  }
+    }
 }

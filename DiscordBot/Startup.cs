@@ -41,7 +41,6 @@ namespace DiscordBot
       provider.GetRequiredService<ReactionController>();
 
       await provider.GetRequiredService<StartupService>().StartAsync();
-      await Task.Delay(-1); // Keep the program alive                               
     }
 
     private void ConfigureServices(IServiceCollection services)
