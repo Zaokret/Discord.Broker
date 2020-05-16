@@ -10,5 +10,6 @@ namespace DiscordBot
     public string Token { get; set; }
     public ulong MainGuild { get; set; }
     public IEnumerable<Coin> Coins { get; set; }
+    public char CommandPrefix { get; set; }
   }
 }

@@ -8,34 +8,29 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DiscordBot.Actions
+namespace DiscordBot.Controllers
 {
   public class ReactionController
   {
     private readonly IUserRepository _repository;
     private readonly Configuration _config;
-    public ReactionController(IUserRepository repository, Configuration config)
+    public ReactionController(DiscordSocketClient client, IUserRepository repository, Configuration config)
     {
       _config = config ?? throw new ArgumentNullException(nameof(config));
       _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+      client.ReactionAdded += ReactionAdded;
+      client.ReactionRemoved += ReactionRemoved;
     }
-
-    /*
-      await _client.Guilds
-              .FirstOrDefault(g => g.Id == _config.MainGuild)
-              .GetTextChannel(reaction.Channel.Id)
-              .SendMessageAsync(msg);
-       */
 
     public async Task ReactionAdded(Cacheable<IUserMessage, ulong> userMessageProvider, ISocketMessageChannel channel, SocketReaction reaction)
     {
-      Coin coin = _config.Coins.FirstOrDefault(c => new Emoji(c.EmoteCode).Equals(reaction.Emote));
+      Coin coin = _config.Coins.FirstOrDefault(c => c.EmoteName == reaction.Emote.Name);
       if (coin == null)
         return;
 
       IUserMessage userMessage = await userMessageProvider.GetOrDownloadAsync();
-      //if (userMessage.Author.Id == reaction.UserId)
-      //  return;
+      if (userMessage.Author.Id == reaction.UserId)
+        return;
 
       await _repository.AddCoin(userMessage.Author.Id, coin.Value);
       await _repository.SaveAsync();
@@ -45,13 +40,13 @@ namespace DiscordBot.Actions
 
     public async Task ReactionRemoved(Cacheable<IUserMessage, ulong> userMessageProvider, ISocketMessageChannel channel, SocketReaction reaction)
     {
-      Coin coin = _config.Coins.FirstOrDefault(c => new Emoji(c.EmoteCode).Equals(reaction.Emote));
+      Coin coin = _config.Coins.FirstOrDefault(c => c.EmoteName == reaction.Emote.Name);
       if (coin == null)
         return;
 
       IUserMessage userMessage = await userMessageProvider.GetOrDownloadAsync();
-      //if (userMessage.Author.Id == reaction.UserId)
-      //  return;
+      if (userMessage.Author.Id == reaction.UserId)
+        return;
 
       await _repository.SubtractCoin(userMessage.Author.Id, coin.Value);
       await _repository.SaveAsync();
