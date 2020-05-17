@@ -17,11 +17,13 @@ namespace Game.CoinWar
   {
     public Team(IGrouping<int, Player> grouping)
     {
-      Coins = grouping.Aggregate(0, (teamBetAmount, player) => teamBetAmount + player.CurrentBet);
+      CurrentBet = grouping.Aggregate(0, (teamBetAmount, player) => teamBetAmount + player.CurrentBet);
+      CoinsLeft = grouping.Aggregate(0, (coinsTotal, player) => coinsTotal + player.Coins);
       Players = grouping.Select(p => p);
       TeamId = grouping.Key;
     }
-    public int Coins { get; set; }
+    public int CoinsLeft { get; set; }
+    public int CurrentBet { get; set; }
     public int TeamId { get; set; }
     public IEnumerable<Player> Players { get; set; }
   }
@@ -34,9 +36,9 @@ namespace Game.CoinWar
     public int TeamId { get; set; }
     public bool Winner { get; set; }
 
-    public Player Win()
+    public Player Win(int winningTeamId)
     {
-      Winner = true;
+      Winner = winningTeamId == TeamId;
       return this;
     }
 
@@ -115,10 +117,8 @@ namespace Game.CoinWar
 
     public void EndWithWinner(int teamId)
     {
-      // will this update game players?
-      Players
-          .Where(p => p.TeamId == teamId)
-          .Select(p => p.Win())
+      Players = Players
+          .Select(p => p.Win(teamId))
           .ToList();
       WinnerFound = true;
     }
@@ -255,11 +255,11 @@ namespace Game.CoinWar
           .GroupBy(p => p.TeamId)
           .Select(grouping => new Team(grouping));
 
-      if (teams.All(t => t.Coins == 0))
+      if (teams.All(t => t.CoinsLeft == 0))
       {
         return Round.BothLost();
       }
-      Team losingTeam = teams.FirstOrDefault(t => t.Coins == 0);
+      Team losingTeam = teams.FirstOrDefault(t => t.CoinsLeft == 0);
       if (losingTeam != null)
         return new Round(losingTeam.TeamId);
 
@@ -268,7 +268,7 @@ namespace Game.CoinWar
 
     private async Task<Round> ExecuteRound(Game game, int round)
     {
-      Optional<Team> winningTeam = await EvaluateWinner(game, round);
+      Optional<Team> winningTeam = await EvaluateWinnerOrWar(game, round);
       if (!winningTeam.IsSpecified)
       {
         await Task.WhenAll(
@@ -284,7 +284,7 @@ namespace Game.CoinWar
       return new Round(winningTeam.Value.TeamId);
     }
 
-    private async Task<Optional<Team>> EvaluateWinner(Game game, int round)
+    private async Task<Optional<Team>> EvaluateWinnerOrWar(Game game, int round)
     {
       SocketMessage[] messages = await Task.WhenAll(
         game.Players.Select((player) =>
@@ -297,13 +297,12 @@ namespace Game.CoinWar
       IOrderedEnumerable<Team> teams = game.Players
           .GroupBy(p => p.TeamId)
           .Select(grouping => new Team(grouping))
-          .OrderByDescending(team => team.Coins);
+          .OrderByDescending(team => team.CurrentBet);
       
       Team winningTeam = teams.First();
-      if(teams.Any(t => t.Coins == winningTeam.Coins))
+      if(teams.Any(t => t.CurrentBet == winningTeam.CurrentBet))
         return Optional<Team>.Unspecified;
 
-      game.Players = teams.SelectMany(team => team.Players).ToList();
       return winningTeam;
     }
 
