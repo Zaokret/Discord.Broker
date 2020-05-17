@@ -17,7 +17,7 @@ using System.Threading.Tasks;
 
 namespace DiscordBot
 {
-  class JsonUserRepository : IUserRepository
+  public class JsonUserRepository : IUserRepository
   {
     private readonly UserEntityContextProvider _contextProvider;
     public JsonUserRepository(UserEntityContextProvider contextProvider)
@@ -30,61 +30,43 @@ namespace DiscordBot
       await _contextProvider.SaveUserJsonArray();
     }
 
-    public async Task AddUser(ulong userId)
+    public async Task AddUserAsync(User user)
     {
-      User user = new User(userId, new Wallet(0)); // move to service
       JArray userTokenArray = await _contextProvider.GetUserJsonArray();
-      if(!UserExist(userTokenArray, userId))
+      if (!UserExist(userTokenArray, user.Id))
       {
-        userTokenArray.Add(JToken.FromObject(new UserEntity(user)));
+        userTokenArray.Add(JToken.FromObject(new UserEntity(user.Id, user.Wallet.Funds)));
       }
     }
 
-    public async Task<IEnumerable<UserEntity>> GetAllUsers()
+    public async Task AddUserAsync(ulong userId)
+    {
+      JArray userTokenArray = await _contextProvider.GetUserJsonArray();
+      if(!UserExist(userTokenArray, userId))
+      {
+        userTokenArray.Add(JToken.FromObject(new UserEntity(userId, 0)));
+      }
+    }
+
+    public async Task<IEnumerable<UserEntity>> GetAllUsersAsync()
     {
       return (await _contextProvider.GetUserJsonArray()).ToObject<IEnumerable<UserEntity>>();
     }
 
-    public async Task AddCoin(ulong userId, float coinValue)
+    public async Task UpdateFundsAsync(ulong userId, float newFunds)
     {
       JArray userTokenArray = await _contextProvider.GetUserJsonArray();
-      if (UserExist(userTokenArray, userId))
+      string fundsProperty = Enum.GetName(typeof(EntityTokenProperties), EntityTokenProperties.Funds);
+      userTokenArray.Where(ByToken(EntityTokenProperties.UserId, userId)).Select(token =>
       {
-        string fundsProperty = Enum.GetName(typeof(EntityTokenProperties), EntityTokenProperties.Funds);
-        userTokenArray.Where(ByToken(EntityTokenProperties.UserId, userId)).Select(token =>
-        {
-          // token is of type UserEntity
-          // move to service ?
-          token[fundsProperty] = new Wallet(token[fundsProperty].Value<float>()).Deposit(coinValue).Funds;
-          return token;
-        }).ToList();
-      }
-      else
-      {
-        User user = new User(userId, new Wallet(coinValue)); // move to service
-        userTokenArray.Add(JToken.FromObject(new UserEntity(user)));
-      }
-    }
-
-    public async Task SubtractCoin(ulong userId, float coinValue)
-    {
-      JArray userTokenArray = await _contextProvider.GetUserJsonArray();
-      if (UserExist(userTokenArray, userId))
-      {
-        string fundsProperty = Enum.GetName(typeof(EntityTokenProperties), EntityTokenProperties.Funds);
-        userTokenArray
-        .Where(ByToken(EntityTokenProperties.UserId, userId))
-        .Select(token =>
-        {
-          token[fundsProperty] = new Wallet(token[fundsProperty].Value<float>()).Widthdraw(coinValue).Funds;
-          return token;
-        }).ToList();
-      }
+        token[fundsProperty] = newFunds;
+        return token;
+      }).ToList();
     }
     
-    public async Task<float> GetCoinsByUserId(ulong userId)
+    public async Task<float> GetCoinsByUserIdAsync(ulong userId)
     {
-      UserEntity user = await GetUserById(userId);
+      UserEntity user = await GetUserByIdAsync(userId);
       return user?.Funds ?? 0;
     }
 
@@ -103,14 +85,14 @@ namespace DiscordBot
       };
     }
 
-    public async Task<UserEntity> GetUserById(ulong userId)
+    public async Task<UserEntity> GetUserByIdAsync(ulong userId)
     {
       JArray userTokenArray = await _contextProvider.GetUserJsonArray();
       JToken userToken = userTokenArray.FirstOrDefault(ByToken(EntityTokenProperties.UserId, userId));
       return userToken?.ToObject<UserEntity>();
     }
 
-    public async Task<bool> UserExist(ulong userId)
+    public async Task<bool> UserExistAsync(ulong userId)
     {
       JArray userTokenArray = await _contextProvider.GetUserJsonArray();
       return UserExist(userTokenArray, userId);

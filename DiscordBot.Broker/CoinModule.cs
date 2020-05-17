@@ -22,13 +22,13 @@ namespace DiscordBot.Modules
     public async Task GetCoinsAsync([Summary("User to get coins for.")] IUser user = null)
     {
       user = user ?? Context.User;
-      if(!(await _userRepository.UserExist(user.Id)))
+      if(!(await _userRepository.UserExistAsync(user.Id)))
       {
         await ReplyAsync($"Fella is off the books.");
       }
       else
       {
-        float coins = await _userRepository.GetCoinsByUserId(user.Id);
+        float coins = await _userRepository.GetCoinsByUserIdAsync(user.Id);
         int rounded = (int)Math.Round(coins);
         await ReplyAsync(GetUserMessage(rounded, user.Username));
       }

@@ -1,5 +1,6 @@
 using Discord;
 using Discord.WebSocket;
+using DiscordBot.Broker;
 using DiscordBot.Contracts;
 using DiscordBot.Models;
 using System;
@@ -14,8 +15,11 @@ namespace DiscordBot.Controllers
   {
     private readonly IUserRepository _repository;
     private readonly Configuration _config;
-    public ReactionController(DiscordSocketClient client, IUserRepository repository, Configuration config)
+    private readonly CoinService _service;
+
+    public ReactionController(DiscordSocketClient client, IUserRepository repository, Configuration config, CoinService service)
     {
+      _service = service ?? throw new ArgumentNullException(nameof(service));
       _config = config ?? throw new ArgumentNullException(nameof(config));
       _repository = repository ?? throw new ArgumentNullException(nameof(repository));
       client.ReactionAdded += ReactionAdded;
@@ -32,9 +36,7 @@ namespace DiscordBot.Controllers
       if (userMessage.Author.Id == reaction.UserId)
         return;
 
-      await _repository.AddCoin(userMessage.Author.Id, coin.Value);
-      await _repository.SaveAsync();
-      float funds = await _repository.GetCoinsByUserId(userMessage.Author.Id);
+      float funds = await _service.AddCoin(userMessage.Author.Id, coin);
       Console.WriteLine($"{userMessage.Author.Id} was awarded one {coin.Name} by user with id {reaction.UserId}. New total {funds}");
     }
 
@@ -48,9 +50,7 @@ namespace DiscordBot.Controllers
       if (userMessage.Author.Id == reaction.UserId)
         return;
 
-      await _repository.SubtractCoin(userMessage.Author.Id, coin.Value);
-      await _repository.SaveAsync();
-      float funds = await _repository.GetCoinsByUserId(userMessage.Author.Id);
+      float funds = await _service.RemoveCoin(userMessage.Author.Id, coin);
       Console.WriteLine($"{userMessage.Author.Id} lost one {coin.Name} because user with id {reaction.UserId} revoked it. New total {funds}");
     }
   }

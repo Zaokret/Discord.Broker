@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace DiscordBot.Contexts
 {
-  class UserEntityContextProvider
+  public class UserEntityContextProvider
   {
     private static readonly string FilePath = "users.json";
 

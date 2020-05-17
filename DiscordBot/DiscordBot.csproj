@@ -4,7 +4,6 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Discord.Net" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.4" />
   </ItemGroup>
   <ItemGroup>
@@ -19,5 +18,11 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <CopyToPublishDirectory>Always</CopyToPublishDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DiscordBot.Broker\DiscordBot.Broker.csproj" />
+    <ProjectReference Include="..\DiscordBot.Core\DiscordBot.Core.csproj" />
+    <ProjectReference Include="..\DiscordBot.Infrastructure\DiscordBot.Infrastructure.csproj" />
+    <ProjectReference Include="..\Game.CoinWar\DiscordBot.Game.CoinWar.csproj" />
   </ItemGroup>
 </Project>

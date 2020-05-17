@@ -16,8 +16,6 @@ namespace DiscordBot
 {
     class Program
     {
-        private DiscordSocketClient _client;
-
         public static void Main(string[] args)
           => new Program().MainAsync(args).GetAwaiter().GetResult();
 
