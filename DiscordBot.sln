@@ -3,15 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30002.166
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DiscordBot", "DiscordBot\DiscordBot.csproj", "{0CA5FE38-BB0B-4A5A-8EC5-C529637AA12F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DiscordBot.ConsoleApp", "DiscordBot\DiscordBot.ConsoleApp.csproj", "{0CA5FE38-BB0B-4A5A-8EC5-C529637AA12F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiscordBot.Game.CoinWar", "Game.CoinWar\DiscordBot.Game.CoinWar.csproj", "{33493C13-F986-44A5-8EFE-5A7A44E84705}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DiscordBot.Game.CoinWar", "Game.CoinWar\DiscordBot.Game.CoinWar.csproj", "{33493C13-F986-44A5-8EFE-5A7A44E84705}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiscordBot.Core", "DiscordBot.Core\DiscordBot.Core.csproj", "{6DCAA9E2-382F-4AF4-BACC-30E3FF053682}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DiscordBot.Core", "DiscordBot.Core\DiscordBot.Core.csproj", "{6DCAA9E2-382F-4AF4-BACC-30E3FF053682}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiscordBot.Infrastructure", "DiscordBot.Infrastructure\DiscordBot.Infrastructure.csproj", "{8355FF64-760C-4933-B8B8-559056E9E9A9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DiscordBot.Infrastructure", "DiscordBot.Infrastructure\DiscordBot.Infrastructure.csproj", "{8355FF64-760C-4933-B8B8-559056E9E9A9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiscordBot.Broker", "DiscordBot.Broker\DiscordBot.Broker.csproj", "{3B8D5B87-0D7E-44A0-9356-37621CE40E24}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DiscordBot.Broker", "DiscordBot.Broker\DiscordBot.Broker.csproj", "{3B8D5B87-0D7E-44A0-9356-37621CE40E24}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
