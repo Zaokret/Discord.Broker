@@ -12,6 +12,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using DiscordBot.Broker;
+using Discord.Addons.Interactive;
 
 namespace DiscordBot
 {
@@ -61,6 +63,8 @@ namespace DiscordBot
       .AddSingleton<IUserRepository, JsonUserRepository>()
       .AddSingleton<UserEntityContextProvider>()
       .AddSingleton<ReactionController>()
+      .AddScoped<CoinService>()
+      .AddTransient<InteractiveService>()
       .AddSingleton(Configuration);           // Add the configuration to the collection
     }
   }

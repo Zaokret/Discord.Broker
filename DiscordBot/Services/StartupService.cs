@@ -1,6 +1,8 @@
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using DiscordBot.Modules;
+using Game.CoinWar;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -37,7 +39,8 @@ namespace DiscordBot.Services
       await _discord.LoginAsync(TokenType.Bot, discordToken);     // Login to discord
       await _discord.StartAsync();                                // Connect to the websocket
 
-      await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _provider);     // Load commands and modules into the command service
+      await _commands.AddModuleAsync(typeof(CoinModule), _provider);
+      await _commands.AddModuleAsync(typeof(CoinWarModule), _provider);     
     }
   }
 }
