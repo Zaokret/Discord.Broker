@@ -2,7 +2,7 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using DiscordBot.Modules;
-using Game.CoinWar;
+using DiscordBot.Game.CoinWar;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -16,13 +16,13 @@ namespace DiscordBot.Services
     private readonly IServiceProvider _provider;
     private readonly DiscordSocketClient _discord;
     private readonly CommandService _commands;
-    private readonly Configuration _config;
+    private readonly GlobalConfiguration _config;
 
     public StartupService(
         IServiceProvider provider,
         DiscordSocketClient discord,
         CommandService commands,
-        Configuration config)
+        GlobalConfiguration config)
     {
       _provider = provider;
       _config = config;

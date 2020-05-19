@@ -14,58 +14,61 @@ using System.Text;
 using System.Threading.Tasks;
 using DiscordBot.Broker;
 using Discord.Addons.Interactive;
+using DiscordBot.Game.CoinWar;
 
 namespace DiscordBot
 {
-  public class Startup
-  {
-    public Configuration Configuration { get; }
-
-    public Startup(string[] args)
+    public class Startup
     {
-      Configuration = JsonConvert.DeserializeObject<Configuration>(File.ReadAllText("config.json"));
-    }
+        public GlobalConfiguration Configuration { get; }
 
-    public static async Task RunAsync(string[] args)
-    {
-      var startup = new Startup(args);
-      await startup.RunAsync();
-    }
+        public Startup(string[] args)
+        {
+            JsonConfiguration jsonConfig = JsonConvert.DeserializeObject<JsonConfiguration>(File.ReadAllText("config.json"));
+            Configuration = new GlobalConfiguration(args[0], jsonConfig);
+        }
 
-    public async Task RunAsync()
-    {
-      IServiceCollection services = new ServiceCollection();             
-      ConfigureServices(services);
-      var provider = services.BuildServiceProvider();
+        public static async Task RunAsync(string[] args)
+        {
+            var startup = new Startup(args);
+            await startup.RunAsync();
+        }
+
+        public async Task RunAsync()
+        {
+            IServiceCollection services = new ServiceCollection();             
+            ConfigureServices(services);
+            var provider = services.BuildServiceProvider();
       
-      provider.GetRequiredService<LoggingService>();      
-      provider.GetRequiredService<CommandHandler>();
-      provider.GetRequiredService<ReactionController>();
+            provider.GetRequiredService<LoggingService>();      
+            provider.GetRequiredService<CommandHandler>();
+            provider.GetRequiredService<ReactionController>();
 
-      await provider.GetRequiredService<StartupService>().StartAsync();
-    }
+            await provider.GetRequiredService<StartupService>().StartAsync();
+        }
 
-    private void ConfigureServices(IServiceCollection services)
-    {
-      services.AddSingleton(new DiscordSocketClient(new DiscordSocketConfig
-      {                                       // Add discord to the collection
-        LogLevel = LogSeverity.Verbose,       // Tell the logger to give Verbose amount of info
-        MessageCacheSize = 1000               // Cache 1,000 messages per channel
-      }))
-      .AddSingleton(new CommandService(new CommandServiceConfig
-      {                                       // Add the command service to the collection
-        LogLevel = LogSeverity.Verbose,       // Tell the logger to give Verbose amount of info
-        DefaultRunMode = RunMode.Async,       // Force all commands to run async by default
-      }))
-      .AddSingleton<CommandHandler>()  // Add the command handler to the collection
-      .AddSingleton<StartupService>()         // Add startupservice to the collection
-      .AddSingleton<LoggingService>()         // Add loggingservice to the collection
-      .AddSingleton<IUserRepository, JsonUserRepository>()
-      .AddSingleton<UserEntityContextProvider>()
-      .AddSingleton<ReactionController>()
-      .AddScoped<CoinService>()
-      .AddTransient<InteractiveService>()
-      .AddSingleton(Configuration);           // Add the configuration to the collection
-    }
+        private void ConfigureServices(IServiceCollection services)
+        {
+            services.AddSingleton(new DiscordSocketClient(new DiscordSocketConfig
+            {                                       
+                LogLevel = LogSeverity.Verbose,       
+                MessageCacheSize = 1000              
+            }))
+            .AddSingleton(new CommandService(new CommandServiceConfig
+            {                                       
+                LogLevel = LogSeverity.Verbose,       
+                DefaultRunMode = RunMode.Async,       
+            }))
+            .AddSingleton<CommandHandler>()  
+            .AddSingleton<StartupService>()         
+            .AddSingleton<LoggingService>()         
+            .AddSingleton<IUserRepository, JsonUserRepository>()
+            .AddSingleton<UserEntityContextProvider>()
+            .AddSingleton<ReactionController>()
+            .AddSingleton<GameService>() // should this stay singleton ? 
+            .AddScoped<CoinService>()
+            .AddTransient<InteractiveService>()
+            .AddSingleton(Configuration);           
+        }
   }
 }

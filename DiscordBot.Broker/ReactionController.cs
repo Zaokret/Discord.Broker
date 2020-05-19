@@ -14,10 +14,10 @@ namespace DiscordBot.Controllers
   public class ReactionController
   {
     private readonly IUserRepository _repository;
-    private readonly Configuration _config;
+    private readonly GlobalConfiguration _config;
     private readonly CoinService _service;
 
-    public ReactionController(DiscordSocketClient client, IUserRepository repository, Configuration config, CoinService service)
+    public ReactionController(DiscordSocketClient client, IUserRepository repository, GlobalConfiguration config, CoinService service)
     {
       _service = service ?? throw new ArgumentNullException(nameof(service));
       _config = config ?? throw new ArgumentNullException(nameof(config));

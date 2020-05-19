@@ -18,8 +18,8 @@ namespace DiscordBot.Contexts
     {
       try
       {
-        using StreamReader reader = new StreamReader(FilePath);
-        return JArray.Parse(await reader.ReadToEndAsync());
+        using (StreamReader reader = new StreamReader(FilePath))
+            return JArray.Parse(await reader.ReadToEndAsync());
       }
       catch (Exception)
       {
@@ -40,9 +40,9 @@ namespace DiscordBot.Contexts
     {
       try
       {
-        using StreamWriter file = new StreamWriter(FilePath);
-        using JsonTextWriter writer = new JsonTextWriter(file);
-        await _context.WriteToAsync(writer);
+        using (StreamWriter file = new StreamWriter(FilePath))
+        using (JsonTextWriter writer = new JsonTextWriter(file))
+            await _context.WriteToAsync(writer);
         return true;
       }
       catch (Exception)

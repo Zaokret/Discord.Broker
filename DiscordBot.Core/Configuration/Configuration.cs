@@ -5,10 +5,20 @@ using System.Text;
 
 namespace DiscordBot
 {
-  public class Configuration
-  {
-    public string Token { get; set; }
-    public IEnumerable<Coin> Coins { get; set; }
-    public char CommandPrefix { get; set; }
-  }
+    public class JsonConfiguration
+    {
+        public IEnumerable<Coin> Coins { get; set; }
+        public char CommandPrefix { get; set; }
+    }
+
+    public class GlobalConfiguration : JsonConfiguration
+    {
+        public GlobalConfiguration(string token, JsonConfiguration jsonConfig)
+        {
+            Coins = jsonConfig.Coins;
+            CommandPrefix = jsonConfig.CommandPrefix;
+            Token = token;
+        }
+        public string Token { get; set; }
+    }
 }

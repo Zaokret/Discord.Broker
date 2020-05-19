@@ -14,9 +14,9 @@ namespace DiscordBot.Services
     private readonly DiscordSocketClient _client;
     private readonly CommandService _commands;
     private readonly IServiceProvider _services;
-    private readonly Configuration _config;
+    private readonly GlobalConfiguration _config;
 
-    public CommandHandler(IServiceProvider services, DiscordSocketClient client, CommandService commands, Configuration config)
+    public CommandHandler(IServiceProvider services, DiscordSocketClient client, CommandService commands, GlobalConfiguration config)
     {
       _services = services ?? throw new ArgumentNullException(nameof(services));
       _commands = commands ?? throw new ArgumentNullException(nameof(commands));

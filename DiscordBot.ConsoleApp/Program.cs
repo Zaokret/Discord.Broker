@@ -21,8 +21,11 @@ namespace DiscordBot
 
         public async Task MainAsync(string[] args)
         {
-          await Startup.RunAsync(args);
-          await Task.Delay(-1); // Keep the program alive
+            await Console.Out.WriteLineAsync("Enter a valid discord bot token:");
+            string token = await Console.In.ReadLineAsync();
+
+            await Startup.RunAsync(new[] { token });
+            await Task.Delay(-1); // Keep the program alive
         }
     }
 }
