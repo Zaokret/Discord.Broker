@@ -13,6 +13,23 @@ namespace DiscordBot.Game.CoinWar.Models
         public int TeamId { get; set; }
         public bool Winner { get; set; }
 
+        public int CoinsLeft()
+        {
+            return Coins - CurrentBet;
+        }
+
+        public Player Copy()
+        {
+            return new Player()
+            {
+                User = this.User,
+                CurrentBet = this.CurrentBet,
+                Coins = this.Coins,
+                TeamId = this.TeamId,
+                Winner = this.Winner
+            };
+        }
+
         public Player Win(int winningTeamId)
         {
             Winner = winningTeamId == TeamId;

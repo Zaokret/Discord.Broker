@@ -31,7 +31,7 @@ namespace DiscordBot.Controllers
       Coin coin = _config.Coins.FirstOrDefault(c => c.EmoteName == reaction.Emote.Name);
       if (coin == null)
         return;
-
+            
       IUserMessage userMessage = await userMessageProvider.GetOrDownloadAsync();
       if (userMessage.Author.Id == reaction.UserId)
         return;

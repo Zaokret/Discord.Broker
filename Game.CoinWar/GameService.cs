@@ -34,9 +34,6 @@ namespace DiscordBot.Game.CoinWar
 
         public async Task<bool> FindPendingGameAndStartAsync(string gameId, IUser user)
         {
-            GuildEmote emote = _client.Guilds.SelectMany(g => g.Emotes).FirstOrDefault(e => e.Name == "Attar_Coin");
-            await _module.Context.Message.AddReactionAsync(emote);
-
             if (_module == null)
                 throw new ArgumentNullException($"{nameof(GameService)} requires control of {nameof(InteractiveBase<SocketCommandContext>)} module.");
 
@@ -73,6 +70,14 @@ namespace DiscordBot.Game.CoinWar
 
             for (int currentRound = 1; currentRound <= game.NumberOfRounds; currentRound++)
             {
+                if(currentRound > 1)
+                {
+                    await Task.WhenAll(
+                        game.Players.Select((player) =>
+                            player.User.SendMessageAsync(GameScoreView.Of(game, game.Players.First(), game.Players.Last()))));
+                    await Task.Delay(5);
+                }
+
                 await Task.WhenAll(
                         game.Players.Select((player) =>
                             player.User.SendMessageAsync(PlayerMessage.RoundStart(currentRound, player.Coins))));
@@ -120,38 +125,36 @@ namespace DiscordBot.Game.CoinWar
             {
                 return Round.BothLost();
             }
+
             Team losingTeam = teams.FirstOrDefault(t => t.CoinsLeft == 0);
             if (losingTeam != null)
-                return new Round(losingTeam.TeamId);
-
+            {
+                return new Round(
+                    game.Players.First(p => losingTeam.TeamId != p.TeamId),
+                    game.Players.First(p => losingTeam.TeamId == p.TeamId));
+            }
             return Optional<Round>.Unspecified;
         }
 
-        private async Task<Round> ExecuteRound(GameObject game, int round)
+        private async Task<Round> ExecuteRound(GameObject game, int roundNumber)
         {
-            Optional<Team> winningTeam = await EvaluateWinnerOrWar(game, round);
+            Optional<Team> winningTeam = await EvaluateWinnerOrWar(game, roundNumber);
             if (winningTeam.IsSpecified)
             {
-                // create round score
                 Player winner = game.Players.FirstOrDefault(p => p.TeamId == winningTeam.Value.TeamId);
                 Player loser = game.Players.FirstOrDefault(p => p.TeamId != winningTeam.Value.TeamId);
-                Func<Player, Embed> score = RoundView.Of(round, winner, loser);
-
-                // message players
-                await Task.WhenAll(
-                  game.Players.Select(p =>
-                    p.User.SendMessageAsync(score(p))));
+                Round round = new Round(winner, loser);
 
                 // logic
                 game.Players = game.Players.Select(p => p.NextRound()).ToList();
-                return new Round(winningTeam.Value.TeamId);
+                return round;
             }
             else
             {
                 await Task.WhenAll(
                   game.Players.Select(p =>
                     p.User.SendMessageAsync(PlayerMessage.War())));
-                return await ExecuteRound(game, round);
+                return await ExecuteRound(game, roundNumber);
             }
         }
 
@@ -239,7 +242,7 @@ namespace DiscordBot.Game.CoinWar
         {
             if (PendingGames != null)
             {
-                foreach (PendingGame existingGame in PendingGames.Where(g => g.UserInitiatorId == userId))
+                foreach (PendingGame existingGame in PendingGames.Where(g => g.UserInitiatorId == userId).ToList())
                 {
                     PendingGames.Remove(existingGame);
                 }
