@@ -9,25 +9,31 @@ namespace DiscordBot.Game.CoinWar.Models
         public Round(int teamid)
         {
             WinnerTeamId = teamid;
-            BothTeamLost = false;
+            BothTeamsLostRewards = false;
         }
 
-        public Round(Player winner, Player loser)
+        public Round(Player winner, Player loser, bool withoutFunds = false)
         {
             WinnerTeamId = winner.TeamId;
-            BothTeamLost = false;
+            BothTeamsLostRewards = false;
             Winner = winner.Copy();
             Loser = loser.Copy();
+            LoserWithoutFunds = withoutFunds;
         }
 
-        public static Round BothLost()
+        public static Round BothWithoutFunds()
         {
-            return new Round(0) { BothTeamLost = true };
+            return new Round(0)
+            {
+                BothTeamsLostRewards = true,
+                LoserWithoutFunds = true
+            };
         }
 
         public Player Winner { get; set; }
         public Player Loser { get; set; }
-        public bool BothTeamLost { get; set; }
+        public bool BothTeamsLostRewards { get; set; }
         public int WinnerTeamId { get; set; }
+        public bool LoserWithoutFunds { get; set; }
     }
 }

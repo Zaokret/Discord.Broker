@@ -1,4 +1,5 @@
 ﻿using Discord;
+using DiscordBot.Core.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,28 +7,36 @@ using System.Text;
 
 namespace DiscordBot.Game.CoinWar.Models
 {
+    public static class GameConfiguration
+    {
+        public static readonly int NumberOfRounds = 9;
+        public static readonly int GameCoins = 100;
+        public static readonly float BuyIn = 1f;
+        public static readonly int RoundsToVictory = (int)decimal.Ceiling(new decimal(NumberOfRounds) / 2);
+        public static readonly int MinimumBet = 5;
+    }
+
     public class GameObject
     {
-        public GameObject(PendingGame game, IUser playerOne, IUser playerTwo)
+        public GameObject(PendingGame pendingGame)
         {
-            // tweak at will
-            BuyInInvestment = 1f;
-            GameCoins = 100;
-            NumberOfRounds = 9;
-            RoundsToVictory = (int)decimal.Ceiling(new decimal(NumberOfRounds) / 2);
-
-            // shouldn't be chnaged without a good reason
-            Guid = game.Guid;
+            Guid = pendingGame.Guid;
             WinnerFound = false;
             Rounds = new List<Round>();
             Players = new List<Player>(new[]
             {
-                new Player() { User = playerOne, Coins = GameCoins, CurrentBet = 0, TeamId = 1, Winner = false },
-                new Player() { User = playerTwo, Coins = GameCoins, CurrentBet = 0, TeamId = 2, Winner = false }
+                new Player() { User = pendingGame.Initiator, Coins = GameConfiguration.GameCoins, CurrentBet = 0, TeamId = 1, Winner = false },
+                new Player() { User = pendingGame.Challanged, Coins = GameConfiguration.GameCoins, CurrentBet = 0, TeamId = 2, Winner = false }
             });
-            
+
+            Collectable = pendingGame.Collectable;
+            BuyInInvestment = GameConfiguration.BuyIn;
+            GameCoins = GameConfiguration.GameCoins;
+            NumberOfRounds = GameConfiguration.NumberOfRounds;
+            RoundsToReward = GameConfiguration.RoundsToVictory;
+            MinimumBet = GameConfiguration.MinimumBet;
         }
-        public int RoundsToVictory { get; set; }
+        public int RoundsToReward { get; set; }
         public string Guid { get; set; }
         public int NumberOfRounds { get; set; }
         public ICollection<Round> Rounds { get; set; }
@@ -35,13 +44,16 @@ namespace DiscordBot.Game.CoinWar.Models
         public int GameCoins { get; set; }
         public ICollection<Player> Players { get; set; }
         public bool WinnerFound { get; set; }
+        public CollectableEntity Collectable { get; set; }
+        public int MinimumBet { get; set; }
 
         public void EndWithWinner(int teamId)
         {
+            WinnerFound = true;
             Players = Players
                 .Select(p => p.Win(teamId))
                 .ToList();
-            WinnerFound = true;
+            
         }
     }
 

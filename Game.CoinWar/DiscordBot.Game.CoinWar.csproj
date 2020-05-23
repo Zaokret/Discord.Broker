@@ -5,11 +5,23 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="collectables.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="collectables.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Discord.Addons.Interactive" Version="1.0.1" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\DiscordBot.Broker\DiscordBot.Broker.csproj" />
     <ProjectReference Include="..\DiscordBot.Core\DiscordBot.Core.csproj" />
+    <ProjectReference Include="..\DiscordBot.Infrastructure\DiscordBot.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

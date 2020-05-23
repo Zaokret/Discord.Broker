@@ -8,45 +8,51 @@ using System.Threading.Tasks;
 
 namespace DiscordBot.Broker
 {
-  public class CoinService
-  {
-    public readonly IUserRepository _repository;
-    public CoinService(IUserRepository repository)
+    public class CoinService
     {
-      _repository = repository ?? throw new ArgumentNullException(nameof(repository));
-    }
-    public async Task<float> AddCoin(ulong userId, Coin coin)
-    {
-      UserEntity entity = await _repository.GetUserByIdAsync(userId);
-      if(entity != null)
-      {
-        Wallet wallet = new Wallet(entity.Funds);
-        wallet.Deposit(coin.Value);
-        await _repository.UpdateFundsAsync(userId, wallet.Funds);
-        await _repository.SaveAsync();
-        return wallet.Funds;
-      }
-      else
-      {
-        User user = new User(userId, new Wallet(coin.Value));
-        await _repository.AddUserAsync(user);
-        await _repository.SaveAsync();
-        return user.Wallet.Funds;
-      }
-    }
+        public readonly IUserRepository _repository;
+        public CoinService(IUserRepository repository)
+        {
+            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        }
 
-    public async Task<float> RemoveCoin(ulong userId, Coin coin)
-    {
-      UserEntity entity = await _repository.GetUserByIdAsync(userId);
-      if (entity != null)
-      {
-        Wallet wallet = new Wallet(entity.Funds);
-        wallet.Widthdraw(coin.Value);
-        await _repository.UpdateFundsAsync(userId, wallet.Funds);
-        await _repository.SaveAsync();
-        return wallet.Funds;
-      }
-      return 0;
+        public async Task<float> AddFunds(ulong userId, float funds)
+        {
+            UserEntity entity = await _repository.GetUserByIdAsync(userId);
+            if (entity != null)
+            {
+                Wallet wallet = new Wallet(entity.Funds);
+                wallet.Deposit(funds);
+                await _repository.UpdateFundsAsync(userId, wallet.Funds);
+                await _repository.SaveAsync();
+                return wallet.Funds;
+            }
+            else
+            {
+                User user = new User(userId, new Wallet(funds));
+                await _repository.AddUserAsync(user);
+                await _repository.SaveAsync();
+                return user.Wallet.Funds;
+            }
+        }
+
+        public async Task<float> AddCoin(ulong userId, Coin coin)
+        {
+            return await AddFunds(userId, coin.Value);
+        }
+
+        public async Task<float> RemoveCoin(ulong userId, Coin coin)
+        {
+            UserEntity entity = await _repository.GetUserByIdAsync(userId);
+            if (entity != null)
+            {
+                Wallet wallet = new Wallet(entity.Funds);
+                wallet.Widthdraw(coin.Value);
+                await _repository.UpdateFundsAsync(userId, wallet.Funds);
+                await _repository.SaveAsync();
+                return wallet.Funds;
+            }
+            return 0;
+        }
     }
-  }
 }

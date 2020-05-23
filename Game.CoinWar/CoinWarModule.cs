@@ -11,14 +11,6 @@ using System.Threading.Tasks;
 
 namespace DiscordBot.Game.CoinWar
 {
-    class GuidHelper
-    {
-        public static string Generate()
-        {
-            return Guid.NewGuid().ToString("N");
-        }
-    }
-
     public class CoinWarModule : InteractiveBase<SocketCommandContext>
     {
         private readonly GlobalConfiguration _config;
@@ -33,42 +25,25 @@ namespace DiscordBot.Game.CoinWar
             _service.GiveModuleControl(this);
         }
 
-        private const string GameInitCommand = "tigerking";
-        private string JoinCommand(string id) => $"{_config.CommandPrefix}{GameInitCommand} {id}";
+        [Command("auction")]
+        [Summary("Creates/Joins a coin war game instance.")]
+        public async Task JoinOrCreate(IUser user)
+        {
+            if(Context.User.Id == user.Id)
+            {
+                await Context.User.SendMessageAsync("You can't play with yourself.");
+            }
+            else
+            {
+                await _service.CreateOrStartGameAsync(Context.User, user, Context.Channel.Name);
+            }
+            
+        }
 
         /*
          GuildEmote emote = _client.Guilds.SelectMany(g => g.Emotes).FirstOrDefault(e => e.Name == "Attar_Coin");
             if(emote != null)
                 await Context.Message.AddReactionAsync(emote);
         */
-
-        /*
-            command user ( challange someone )
-            command user ( accept challange )
-                remove pending challanges on challange or accept
-        */
-
-        [Command(GameInitCommand)]
-        [Summary("Creates a coin war game instance.")]
-        public async Task CreateCoinWarGame()
-        {
-            IUser user = Context.User;
-            string gameId = _service.CreatePendingGame(user.Id);
-            await user.SendMessageAsync(PlayerMessage.GameCreated(JoinCommand(gameId)), false, GameView.Info(new GameObject(new PendingGame(1), user, user)));
-        }
-
-        [Command(GameInitCommand, RunMode = RunMode.Async)]
-        [Summary("Join coin war game that was created by another player.")]
-        public async Task JoinCoinWarGame(string gameId)
-        {
-            IUser user = Context.User;
-            bool gameFoundAndStarted = await _service.FindPendingGameAndStartAsync(gameId, user);
-
-            if(gameFoundAndStarted == false)
-            {
-                await user.SendMessageAsync(PlayerMessage.GameNotFound());
-            }
-        }
-
     }
 }

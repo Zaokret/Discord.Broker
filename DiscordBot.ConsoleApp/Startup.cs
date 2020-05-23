@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using DiscordBot.Broker;
 using Discord.Addons.Interactive;
 using DiscordBot.Game.CoinWar;
+using DiscordBot.Infrastructure.Repositories;
 
 namespace DiscordBot
 {
@@ -63,9 +64,11 @@ namespace DiscordBot
             .AddSingleton<StartupService>()         
             .AddSingleton<LoggingService>()         
             .AddSingleton<IUserRepository, JsonUserRepository>()
+            .AddSingleton<CollectableRepository>()
             .AddSingleton<UserEntityContextProvider>()
             .AddSingleton<ReactionController>()
             .AddSingleton<GameService>() // should this stay singleton ? 
+            .AddSingleton<CollectablePickerService>()
             .AddScoped<CoinService>()
             .AddTransient<InteractiveService>()
             .AddSingleton(Configuration);           

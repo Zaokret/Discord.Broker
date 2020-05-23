@@ -38,7 +38,7 @@ namespace DiscordBot.Game.CoinWar.Models
 
         public bool IsBetValid(int bet)
         {
-            return bet > 0 && (bet + CurrentBet) <= Coins;
+            return bet >= GameConfiguration.MinimumBet && (bet + CurrentBet) <= Coins;
         }
 
         public Player Bet(int bet)
