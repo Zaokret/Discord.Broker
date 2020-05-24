@@ -1,35 +1,35 @@
 ﻿[
   {
-    "name": "tiger cub",
-    "emote": "🐯",
+    "itemName": "tiger cub",
+    "emoteName": "Tiger_Cub",
     "title": "zookeeper",
     "win": "They were a pain to keep under control - here - now you deal with them.",
     "lose": "You'll be back to engage with that unsatiated obsession with collecting big cats, and I'll be here waiting."
   },
   {
-    "name": "alien head",
-    "emote": "👽",
+    "itemName": "alien head",
+    "emoteName": "Alien_Head",
     "title": "conspiracy theorist",
     "win": "Still not impressed? I know a friend who knows a friend who knows someone who has been abducted by aliens.",
     "lose": "You at least got to look at them."
   },
   {
-    "name": "toilet paper roll",
-    "emote": "🧻",
+    "itemName": "toilet paper roll",
+    "emoteName": "Toilet_Paper",
     "title": "panicking diarrhea lady",
     "win": "You can calm down now lady and go wipe your butt!",
     "lose": "Store-bought toilet paper not good enough for you? Suffer - you animal!"
   },
   {
-    "name": "corona infected bat wing",
-    "emote": "🦇",
+    "itemName": "corona infected bat wing",
+    "emoteName": "Corona_Bat",
     "title": "scientist",
     "win": "I and whole of humanity trust you to keep these wings and not create another outbreak.",
     "lose": ""
   },
   {
-    "name": "purple dildo",
-    "emote": "🍆",
+    "itemName": "purple dildo",
+    "emoteName": "Purple_Dildo",
     "title": "masturbate-a-thon medalist",
     "win": "Not judging, but your rectum is falling out.",
     "lose": ""

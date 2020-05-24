@@ -1,4 +1,5 @@
 ﻿using Discord;
+using Discord.WebSocket;
 using DiscordBot.Core.Models;
 using DiscordBot.Game.CoinWar.Models;
 using DiscordBot.Infrastructure.Repositories;
@@ -13,17 +14,19 @@ namespace DiscordBot.Game.CoinWar
     public class CollectablePickerService
     {
         private readonly CollectableRepository _repository;
+        private readonly DiscordSocketClient _client;
 
-        public CollectablePickerService(CollectableRepository repository)
+        public CollectablePickerService(CollectableRepository repository, DiscordSocketClient client)
         {
+            _client = client ?? throw new ArgumentNullException(nameof(client));
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         }
 
         private readonly CollectableEntity DefaultCollectable = new CollectableEntity
         {
-            Name = "tiger",
+            ItemName = "tiger",
             Title = "zookeeper",
-            Emote = "🐯"
+            EmoteName = "🐅"
         };
 
         public CollectableEntity GetRandomCollectable()
@@ -43,7 +46,21 @@ namespace DiscordBot.Game.CoinWar
             {
                 return DefaultCollectable;
             }
-            return chosen.Value;
+            
+            return UpdateEmoteName(chosen.Value);
         }
+
+        private CollectableEntity UpdateEmoteName(CollectableEntity collectable)
+        {
+            GuildEmote emote = _client.Guilds.SelectMany(g => g.Emotes).FirstOrDefault(e => e.Name == collectable.EmoteName);
+            if(emote == null)
+            {
+                return DefaultCollectable;
+            }
+            collectable.EmoteName = EmoteStringFormat(emote);
+            return collectable;
+        }
+
+        private string EmoteStringFormat(GuildEmote emote) => $"<:{emote.Name}:{emote.Id}>";
     }
 }

@@ -431,7 +431,7 @@ namespace DiscordBot.Game.CoinWar
 
             await Task.WhenAll(
                 game.Players.Select((player) =>
-                    player.User.SendMessageAsync(PlayerMessage.RoundStart(currentRound, player.Coins, game.Collectable.Name))));
+                    player.User.SendMessageAsync(PlayerMessage.RoundStart(currentRound, player.Coins, game.Collectable.ItemName))));
 
         }
 
@@ -445,7 +445,7 @@ namespace DiscordBot.Game.CoinWar
 
             await Task.WhenAll(
                         game.Players.Select((player) =>
-                            player.User.SendMessageAsync(EndOfGameMsg(player, game.Collectable.Emote))));
+                            player.User.SendMessageAsync(EndOfGameMsg(player, game.Collectable.EmoteName))));
         }
 
         private string EndOfGameMsg(Player player, string itemEmote)

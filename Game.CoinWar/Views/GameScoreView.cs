@@ -44,18 +44,18 @@ namespace DiscordBot.Game.CoinWar.Views
             List<Round> roundList = game.Rounds.ToList();
             Round lastRound = roundList.Last();
 
-            string itemsLeft = string.Join(" ", Enumerable.Range(1, game.NumberOfRounds - roundList.Count).Select(s => game.Collectable.Emote));
+            string itemsLeft = string.Join(" ", Enumerable.Range(1, game.NumberOfRounds - roundList.Count).Select(s => game.Collectable.EmoteName));
             if (string.IsNullOrWhiteSpace(itemsLeft))
             {
-                itemsLeft = $"No {game.Collectable.Name}s left.";
+                itemsLeft = $"No {game.Collectable.ItemName}s left.";
             }
 
             return new EmbedBuilder()
                 .WithTitle(isFinalScoreBoard ? "Final score board" : "Score board")
                 .WithDescription(itemsLeft)
                 .AddField($"Winner of round # {roundList.Count}", lastRound.Winner.User.Username)
-                .AddField($"{playerOne.User.Username} ({playerOne.Coins})", GetPlayerScoreDescription(roundList, playerOne, game.Collectable.Emote), true)
-                .AddField($"{playerTwo.User.Username} ({playerTwo.Coins})", GetPlayerScoreDescription(roundList, playerTwo, game.Collectable.Emote), true)
+                .AddField($"{playerOne.User.Username} ({playerOne.Coins})", GetPlayerScoreDescription(roundList, playerOne, game.Collectable.EmoteName), true)
+                .AddField($"{playerTwo.User.Username} ({playerTwo.Coins})", GetPlayerScoreDescription(roundList, playerTwo, game.Collectable.EmoteName), true)
                 .WithColor(Color.LightOrange)
                 .Build();
         }
