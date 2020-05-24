@@ -2,6 +2,7 @@ using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;
+using DiscordBot.Game.CoinWar.Exceptions;
 using DiscordBot.Game.CoinWar.Extensions;
 using DiscordBot.Game.CoinWar.Models;
 using DiscordBot.Game.CoinWar.Views;
@@ -29,21 +30,38 @@ namespace DiscordBot.Game.CoinWar
         [Summary("Creates/Joins a coin war game instance.")]
         public async Task JoinOrCreate(IUser user)
         {
+            
             if(Context.User.Id == user.Id)
             {
                 await Context.User.SendMessageAsync("You can't play with yourself.");
             }
+            else if (user.Id == _client.CurrentUser.Id)
+            {
+                await Context.User.SendMessageAsync("I'm still learning to play this game.");
+            }
             else
             {
-                await _service.CreateOrStartGameAsync(Context.User, user, Context.Channel.Name);
+                try
+                {
+                    await _service.CreateOrStartGameAsync(Context.User, user, Context.Channel.Name);
+                }
+                catch (GameAbortException ex)
+                {
+                    await Task.WhenAll(new[]
+                    {
+                        user.SendMessageAsync($"Game was aborted, reason: {ex}"),
+                        Context.User.SendMessageAsync($"Game was aborted, reason: {ex}")
+                    });
+                }
+                catch(Exception ex)
+                {
+                    await Task.WhenAll(new[]
+                    {
+                        user.SendMessageAsync($"Game was aborted for unknown reason. Forward this message to 'JJ 3maj'. {ex}."),
+                        Context.User.SendMessageAsync($"Game was aborted for unknown reason. Forward this message to 'JJ 3maj'. {ex}")
+                    });
+                }
             }
-            
         }
-
-        /*
-         GuildEmote emote = _client.Guilds.SelectMany(g => g.Emotes).FirstOrDefault(e => e.Name == "Attar_Coin");
-            if(emote != null)
-                await Context.Message.AddReactionAsync(emote);
-        */
     }
 }

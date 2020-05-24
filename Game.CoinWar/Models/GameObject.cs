@@ -14,6 +14,7 @@ namespace DiscordBot.Game.CoinWar.Models
         public static readonly float BuyIn = 1f;
         public static readonly int RoundsToVictory = (int)decimal.Ceiling(new decimal(NumberOfRounds) / 2);
         public static readonly int MinimumBet = 5;
+        public static readonly int SecondsBeforeStart = 15;
     }
 
     public class GameObject
@@ -54,6 +55,24 @@ namespace DiscordBot.Game.CoinWar.Models
                 .Select(p => p.Win(teamId))
                 .ToList();
             
+        }
+
+        public GameScore Score()
+        {
+            return Rounds
+                  .Where(r => !r.BothTeamsLostRewards)
+                  .GroupBy(r => r.WinnerTeamId)
+                  .Select(g => new GameScore(g.Key, g.Count()))
+                  .OrderByDescending(s => s.RoundsWon)
+                  .FirstOrDefault();
+        }
+
+        // TEST
+        public (Player, Player) PlayersByTeamId(int teamId)
+        {
+            Player playerInTeam = Players.FirstOrDefault(p => p.TeamId == teamId);
+            Player playerInAnotherTeam = Players.FirstOrDefault(p => p.TeamId != teamId);
+            return (playerInTeam, playerInAnotherTeam);
         }
     }
 

@@ -11,7 +11,7 @@ namespace DiscordBot.Game.CoinWar
             $"{name} joined an auction. Start in {startIn} seconds.";
 
         public static string RoundStart(int round, int coins, string itemName) =>
-            $"{itemName.Capitalize()} number {round} is out for display. You have {coins} coins left. Place your bet.";
+            $"{itemName.Capitalize()} number {round} is out for display. You have {coins} coins left. Reply with a number to make an offer.";
 
         public static string War() => 
             $"Tied with another collector. Add to your initial offer!";

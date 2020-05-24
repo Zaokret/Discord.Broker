@@ -1,4 +1,5 @@
-﻿using DiscordBot.Core.Models;
+﻿using Discord;
+using DiscordBot.Core.Models;
 using DiscordBot.Game.CoinWar.Models;
 using DiscordBot.Infrastructure.Repositories;
 using System;
@@ -18,12 +19,31 @@ namespace DiscordBot.Game.CoinWar
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         }
 
+        private readonly CollectableEntity DefaultCollectable = new CollectableEntity
+        {
+            Name = "tiger",
+            Title = "zookeeper",
+            Emote = "🐯"
+        };
+
         public CollectableEntity GetRandomCollectable()
         {
             List<CollectableEntity> collectables = _repository.GetAll().ToList();
+
+            if(collectables.Count == 0)
+            {
+                return DefaultCollectable;
+            }
+
             Random random = new Random(Guid.NewGuid().GetHashCode());
             int index = random.Next(collectables.Count);
-            return collectables[index];
+
+            Optional<CollectableEntity> chosen = OptionalUtilities.Try(collectables[index]);
+            if(!chosen.IsSpecified)
+            {
+                return DefaultCollectable;
+            }
+            return chosen.Value;
         }
     }
 }

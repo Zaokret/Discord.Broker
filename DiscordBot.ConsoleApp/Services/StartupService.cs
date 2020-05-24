@@ -34,7 +34,7 @@ namespace DiscordBot.Services
     {
       string discordToken = _config.Token;     
       if (string.IsNullOrWhiteSpace(discordToken))
-        throw new Exception("Please enter bot's token into the `config.json` file found in the applications root directory.");
+        throw new Exception("Please enter a valid bot's token.");
 
       await _discord.LoginAsync(TokenType.Bot, discordToken);     // Login to discord
       await _discord.StartAsync();                                // Connect to the websocket
