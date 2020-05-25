@@ -327,11 +327,23 @@ namespace DiscordBot.Game.CoinWar
             }
         }
 
+        private async Task<List<Optional<SocketMessage>>> ReadMessagesInResponeOrder(GameObject game, bool isWar)
+        {
+            var bucketedMessages = TaskUtilities.Interleaved(
+              game.Players.Select(p => RetryUntilValidBet(game, p, isWar)));
+            List<Optional<SocketMessage>> messages = new List<Optional<SocketMessage>>();
+            foreach (var bucket in bucketedMessages)
+            {
+                Task<Optional<SocketMessage>> t = await bucket;
+                messages.Add(await t);
+            }
+            return messages;
+        }
+
         private async Task<Optional<Team>> EvaluateWinnerOrWar(GameObject game, int round, bool isWar)
         {
-            Optional<SocketMessage>[] messages = await Task.WhenAll(
-              game.Players.Select(p => RetryUntilValidBet(game, p, isWar)));
-
+            List<Optional<SocketMessage>> messages = await ReadMessagesInResponeOrder(game, isWar);
+            
             if (messages.All(m => !m.IsSpecified))
             {
                 throw new GameAbortException($"Both players didn't offer an amount in round number {round}.");
