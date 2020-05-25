@@ -26,7 +26,8 @@ namespace DiscordBot.Game.CoinWar.Views
                 $"Minimum offer is {GameConfiguration.MinimumBet} coins.",
                 "You're unaware of other buyer offerings.",
                 "Buyer is determined after the first offer.",
-                "In case you offer the same amount as the other buyer, you are asked increase an offer by an amount until a buyer is determined."
+                "If your offer results in a tie, add coins to your initial offer.",
+                "If a tie can't be broken, one who was faster to make the initial offer wins the tie."
             }.Select(s => $" -  {s}");
 
             string reward = "If you complete your collection you keep the coins you didn't spend.";

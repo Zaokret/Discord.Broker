@@ -214,13 +214,29 @@ namespace DiscordBot.Game.CoinWar
 
         private async Task BothLose(GameObject game)
         {
-            GameScore score = game.Score();
-            Player playerWithMoreRounds = game.Players.FirstOrDefault(p => p.TeamId == score.TeamId);
-            Player playerWithLessRounds = game.Players.FirstOrDefault(p => p.TeamId != score.TeamId);
-
+            Score score = game.Score();
+            Player winner = game.Players.FirstOrDefault(p => p.TeamId == score.WinnerTeamId);
+            Player loser = game.Players.FirstOrDefault(p => p.TeamId != score.WinnerTeamId);
+            string message = string.Empty;
+            switch(score.Rule)
+            {
+                case WinnerRule.MoreRoundsWon:
+                    message = $"All players have coins lower than the minimum offer amount to continue. {winner.User.Username} won more rounds than {loser.User.Username}, but doesn't qualify for a reward since he hasn't completed his collection.";
+                    break;
+                case WinnerRule.MoreCoinsLeft:
+                    message = $"All players have coins lower than the minimum offer amount to continue. {winner.User.Username} has more coins left than {loser.User.Username}, but doesn't qualify for a reward since he hasn't completed his collection.";
+                    break;
+                case WinnerRule.TrueTie:
+                    message = $"All players have coins lower than the minimum offer amount to continue, same number of rounds won, same number of coins left and no one completes their collections. It's a tie.";
+                    break;
+                default:
+                    message = $"Unknown game ending. Please report this as an issue to 'JJ 3maj'";
+                    break;
+            }
+            game.Players = game.Players.Select(p => p.Win(score.WinnerTeamId)).ToList();
             await Task.WhenAll(
                 game.Players.Select((player) =>
-                    player.User.SendMessageAsync($"All players have coins lower than the minimum offer amount to continue. {playerWithMoreRounds.User.Username} won more rounds than {playerWithLessRounds.User.Username}, but doesn't qualify for a reward since he hasn't completed his collection.")));
+                    player.User.SendMessageAsync(message)));
         }
 
         private async Task AutomaticallyResolveRounds(GameObject game, Round lastRound)
@@ -258,13 +274,33 @@ namespace DiscordBot.Game.CoinWar
 
         NoneGetRewards:
         {
-            GameScore score = game.Score();
+            Score score = game.Score();
+            Player winner = game.Players.FirstOrDefault(p => p.TeamId == score.WinnerTeamId);
+            Player loser = game.Players.FirstOrDefault(p => p.TeamId != score.WinnerTeamId);
+            string message = string.Empty;
+            switch (score.Rule)
+            {
+                case WinnerRule.MoreRoundsWon:
+                    message = $"{winner.User.Username} wins more rounds.";
+                    break;
+                case WinnerRule.MoreCoinsLeft:
+                    message = $"{winner.User.Username} has more coins left.";
+                    break;
+                case WinnerRule.TrueTie:
+                    message = $"It's a tie.";
+                    break;
+                default:
+                    message = $"Unknown game ending. Please report this as an issue to 'JJ 3maj'";
+                    break;
+            }
 
-            Player playerWithMoreRounds = game.Players.FirstOrDefault(p => p.TeamId == score.TeamId);
-            game.Players = game.Players.Select(p => p.Win(score.TeamId)).ToList();
+            game.Players = game.Players.Select(p => p.Win(score.WinnerTeamId)).ToList();
+
             await Task.WhenAll(
                 game.Players.Select((player) =>
-                    player.User.SendMessageAsync($"{lastRound.Loser.User.Username} can no longer pay minimum price of {GameConfiguration.MinimumBet} coins. {lastRound.Winner.User.Username} is missing {Math.Abs(coinsLeftAfterBuyingAtTheMinimumPrice)} coins to finish the set. No one qualifies for a reward. {playerWithMoreRounds.User.Username} wins more rounds.")));
+                    player.User.SendMessageAsync($"{lastRound.Loser.User.Username} can no longer pay minimum price of {GameConfiguration.MinimumBet} coins. " +
+                    $"{lastRound.Winner.User.Username} is missing {Math.Abs(coinsLeftAfterBuyingAtTheMinimumPrice)} coins to finish the set. " +
+                    $"No one qualifies for a reward. {message}" )));
         }
         }
 
@@ -375,7 +411,7 @@ namespace DiscordBot.Game.CoinWar
                 Player winner = game.Players.FirstOrDefault(p => p.User.Id == firstValidMessage.Value.Author.Id);
                 await Task.WhenAll(
                     game.Players.Select(p =>
-                        p.User.SendMessageAsync($"Both players have 0 coins after the initial tied offer. {winner.User.Username} who made the offer first wins this round.")));
+                        p.User.SendMessageAsync($"Both players have 0 coins after the initial tied offer. {winner.User.Username} who was faster to make the initial offer wins this round.")));
                 await Task.Delay(5000);
 
                 return teams.FirstOrDefault(t => t.TeamId == winner.TeamId);

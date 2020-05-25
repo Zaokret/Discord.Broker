@@ -16,7 +16,20 @@ namespace DiscordBot.Game.CoinWar.Models
         public static readonly int MinimumBet = 5;
         public static readonly int SecondsBeforeStart = 15;
     }
+    
+    public class Score
+    {
+        public int WinnerTeamId { get; set; }
+        public WinnerRule Rule { get; set; }
+    }
 
+    public enum WinnerRule
+    {
+        TrueTie,
+        MoreCoinsLeft,
+        MoreRoundsWon
+    }
+    
     public class GameObject
     {
         public GameObject(PendingGame pendingGame)
@@ -57,17 +70,45 @@ namespace DiscordBot.Game.CoinWar.Models
             
         }
 
-        public GameScore Score()
+        public Score Score()
         {
-            return Rounds
+            var scores = Rounds
                   .Where(r => !r.BothTeamsLostRewards)
                   .GroupBy(r => r.WinnerTeamId)
-                  .Select(g => new GameScore(g.Key, g.Count()))
-                  .OrderByDescending(s => s.RoundsWon)
-                  .FirstOrDefault();
+                  .Select(g =>
+                    new GameScore(
+                        g.Key,
+                        g.Count(),
+                        Players.FirstOrDefault(p => p.TeamId == g.Key).CoinsLeft()))
+                  .OrderByDescending(s => s.RoundsWon);
+           
+            if (scores.Select(s => s.RoundsWon).Distinct().Count() > 1)
+            {
+                return new Score
+                {
+                    WinnerTeamId = scores.FirstOrDefault().TeamId,
+                    Rule = WinnerRule.MoreRoundsWon
+                };
+            }
+            else if (scores.Select(s => s.CoinsLeft).Distinct().Count() > 1)
+            {
+                return new Score
+                {
+                    WinnerTeamId = scores.FirstOrDefault().TeamId,
+                    Rule = WinnerRule.MoreCoinsLeft
+                };
+            }
+            else
+            {
+                return new Score
+                {
+                    WinnerTeamId = 0,
+                    Rule = WinnerRule.TrueTie
+                };
+            }
+            
         }
 
-        // TEST
         public (Player, Player) PlayersByTeamId(int teamId)
         {
             Player playerInTeam = Players.FirstOrDefault(p => p.TeamId == teamId);
