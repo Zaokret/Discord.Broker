@@ -11,7 +11,7 @@ namespace DiscordBot.Contracts
   {
     Task<bool> UserExistAsync(ulong userId);
     Task AddUserAsync(ulong userId);
-    Task AddUserAsync(User user);
+    Task AddUserAsync(UserEntity user);
     Task UpdateFundsAsync(ulong userId, float newFunds);
     Task<UserEntity> GetUserByIdAsync(ulong userId);
     Task<IEnumerable<UserEntity>> GetAllUsersAsync();

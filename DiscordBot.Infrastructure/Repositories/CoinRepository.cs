@@ -30,12 +30,12 @@ namespace DiscordBot
       await _contextProvider.SaveUserJsonArray();
     }
 
-    public async Task AddUserAsync(User user)
+    public async Task AddUserAsync(UserEntity entity)
     {
       JArray userTokenArray = await _contextProvider.GetUserJsonArray();
-      if (!UserExist(userTokenArray, user.Id))
+      if (!UserExist(userTokenArray, entity.UserId))
       {
-        userTokenArray.Add(JToken.FromObject(new UserEntity(user.Id, user.Wallet.Funds)));
+        userTokenArray.Add(JToken.FromObject(entity));
       }
     }
 

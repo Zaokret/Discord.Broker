@@ -1,19 +1,64 @@
+using Discord;
+using Discord.WebSocket;
 using DiscordBot.Contracts;
 using DiscordBot.Entities;
 using DiscordBot.Models;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace DiscordBot.Broker
 {
+    public class RankedUser
+    {
+        public IUser User { get; set; }
+        public int Rank { get; set; }
+        public int Points { get; set; }
+    }
+
+    public class LeaderboardView
+    {
+        public IEnumerable<RankedUser> TopUsers { get; set; }
+        public RankedUser IssuerRanking { get; set; }
+        public int TotalUsers { get; set; }
+    }
+
     public class CoinService
     {
         public readonly IUserRepository _repository;
-        public CoinService(IUserRepository repository)
+        private readonly DiscordSocketClient _client;
+
+        public CoinService(IUserRepository repository, DiscordSocketClient client)
         {
+            _client = client ?? throw new ArgumentNullException(nameof(client));
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        }
+
+        public async Task<LeaderboardView> GetLeaderboard(IUser user, IReadOnlyCollection<SocketGuildUser> guildUsers)
+        {
+            IEnumerable<UserEntity> entities = await _repository.GetAllUsersAsync();
+
+            List<RankedUser> rankedUsers = entities
+                .OrderByDescending(e => e.Funds)
+                .Select((entity, index) =>
+                {
+                    return new RankedUser()
+                    {
+                        User = guildUsers.FirstOrDefault(g => g.Id == entity.UserId),
+                        Points = (int)entity.Funds,
+                        Rank = index + 1,
+                    };
+                })
+                .ToList();
+
+            return new LeaderboardView
+            {
+                TopUsers = rankedUsers.Take(5),
+                IssuerRanking = rankedUsers.FirstOrDefault(r => r.User.Id == user.Id),
+                TotalUsers = rankedUsers.Count
+            };
         }
 
         public async Task<float> AddFunds(ulong userId, float funds)
@@ -29,10 +74,14 @@ namespace DiscordBot.Broker
             }
             else
             {
-                User user = new User(userId, new Wallet(funds));
+                UserEntity user = new UserEntity
+                {
+                    UserId = userId,
+                    Funds = funds
+                };
                 await _repository.AddUserAsync(user);
                 await _repository.SaveAsync();
-                return user.Wallet.Funds;
+                return funds;
             }
         }
 
@@ -54,5 +103,6 @@ namespace DiscordBot.Broker
             }
             return 0;
         }
+
     }
 }
