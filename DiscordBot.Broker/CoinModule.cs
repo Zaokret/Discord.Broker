@@ -47,6 +47,13 @@ namespace DiscordBot.Modules
             await Context.Channel.SendMessageAsync("", false, EmbedViews.Leaderboard(leaderboard));
         }
 
+        [Command("help")]
+        [Summary("Send help instructions.")]
+        public async Task GetHelp()
+        {
+            await Context.Channel.SendFileAsync("./assets/guide-to-staying-relaxed.mp3");
+        }
+
         private string GetUserMessage(int coins, string username)
         {
             if (coins == 0)
