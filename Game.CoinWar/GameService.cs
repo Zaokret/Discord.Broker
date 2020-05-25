@@ -220,7 +220,7 @@ namespace DiscordBot.Game.CoinWar
 
             await Task.WhenAll(
                 game.Players.Select((player) =>
-                    player.User.SendMessageAsync($"All players are out of coins. {playerWithMoreRounds.User.Username} won more rounds than {playerWithLessRounds.User.Username}, but doesn't qualify for a reward since he hasn't completed his collection.")));
+                    player.User.SendMessageAsync($"All players have coins lower than the minimum offer amount to continue. {playerWithMoreRounds.User.Username} won more rounds than {playerWithLessRounds.User.Username}, but doesn't qualify for a reward since he hasn't completed his collection.")));
         }
 
         private async Task AutomaticallyResolveRounds(GameObject game, Round lastRound)
