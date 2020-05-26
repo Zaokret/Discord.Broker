@@ -9,8 +9,9 @@ namespace DiscordBot.Broker
     public class EmbedViews
     {
         private static string UserRankDescription(RankedUser u) {
-            string name = u?.User?.Username ?? "Unknown";
-            return $"{u.Rank}. {name} ({u.Points})";
+            if (u == null)
+                return "Fella is off the books";
+            return $"{u.Rank}. {u.User?.Username ?? "Unknown"} ({u.Points})";
         }
 
         public static Embed Leaderboard(LeaderboardView leaderboard)

@@ -43,7 +43,9 @@ namespace DiscordBot.Modules
         [Summary("Retreives coins for top 5 users in a leaderboard.")]
         public async Task GetLeaderboard()
         {
-            LeaderboardView leaderboard = await _service.GetLeaderboard(Context.User, Context.Guild.Users);
+            ulong userId = Context.User.Id;
+            List<NamedUser> users = Context.Guild.Users.Select(u => new NamedUser { Id = u.Id, Username = u.Username }).ToList();
+            LeaderboardView leaderboard = await _service.GetLeaderboard(userId, users);
             await Context.Channel.SendMessageAsync("", false, EmbedViews.Leaderboard(leaderboard));
         }
 

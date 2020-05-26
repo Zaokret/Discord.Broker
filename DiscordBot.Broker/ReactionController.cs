@@ -58,7 +58,7 @@ namespace DiscordBot.Controllers
                 return;
 
             IUserMessage userMessage = await userMessageProvider.GetOrDownloadAsync();
-            if (userMessage.Author.Id == reaction.UserId)
+            if (userMessage == null || userMessage.Author.Id == reaction.UserId)
                 return;
             
             if (userMessage.Author.Id == _client.CurrentUser.Id)

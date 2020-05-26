@@ -13,7 +13,7 @@ namespace DiscordBot.Broker
 {
     public class RankedUser
     {
-        public IUser User { get; set; }
+        public NamedUser User { get; set; }
         public int Rank { get; set; }
         public int Points { get; set; }
     }
@@ -36,7 +36,7 @@ namespace DiscordBot.Broker
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         }
 
-        public async Task<LeaderboardView> GetLeaderboard(IUser user, IReadOnlyCollection<SocketGuildUser> guildUsers)
+        public async Task<LeaderboardView> GetLeaderboard(ulong userId, List<NamedUser> users)
         {
             IEnumerable<UserEntity> entities = await _repository.GetAllUsersAsync();
 
@@ -46,7 +46,7 @@ namespace DiscordBot.Broker
                 {
                     return new RankedUser()
                     {
-                        User = guildUsers.FirstOrDefault(g => g.Id == entity.UserId),
+                        User = users.FirstOrDefault(g => g.Id == entity.UserId),
                         Points = (int)entity.Funds,
                         Rank = index + 1,
                     };
@@ -56,7 +56,7 @@ namespace DiscordBot.Broker
             return new LeaderboardView
             {
                 TopUsers = rankedUsers.Take(5),
-                IssuerRanking = rankedUsers.FirstOrDefault(r => r.User.Id == user.Id),
+                IssuerRanking = rankedUsers.FirstOrDefault(r => r.User.Id == userId),
                 TotalUsers = rankedUsers.Count
             };
         }
