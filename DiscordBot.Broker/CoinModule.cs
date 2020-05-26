@@ -1,5 +1,6 @@
 using Discord;
 using Discord.Commands;
+using Discord.WebSocket;
 using DiscordBot.Broker;
 using DiscordBot.Contracts;
 using DiscordBot.Models;
@@ -15,9 +16,11 @@ namespace DiscordBot.Modules
     {
         private readonly IUserRepository _userRepository;
         private readonly CoinService _service;
+        private readonly DiscordSocketClient _client;
 
-        public CoinModule(IUserRepository userRepository, CoinService service)
+        public CoinModule(IUserRepository userRepository, CoinService service, DiscordSocketClient client)
         {
+            _client = client ?? throw new ArgumentNullException(nameof(client));
             _service = service ?? throw new ArgumentNullException(nameof(service));
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
         }
@@ -44,7 +47,7 @@ namespace DiscordBot.Modules
         public async Task GetLeaderboard()
         {
             ulong userId = Context.User.Id;
-            List<NamedUser> users = Context.Guild.Users.Select(u => new NamedUser { Id = u.Id, Username = u.Username }).ToList();
+            List<SocketGuildUser> users = Context.Guild?.Users?.ToList() ?? new List<SocketGuildUser>();
             LeaderboardView leaderboard = await _service.GetLeaderboard(userId, users);
             await Context.Channel.SendMessageAsync("", false, EmbedViews.Leaderboard(leaderboard));
         }

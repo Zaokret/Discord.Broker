@@ -80,9 +80,14 @@ namespace DiscordBot.Game.CoinWar.Models
                         g.Key,
                         g.Count(),
                         Players.FirstOrDefault(p => p.TeamId == g.Key).CoinsLeft()))
-                  .OrderByDescending(s => s.RoundsWon);
-           
-            if (scores.Select(s => s.RoundsWon).Distinct().Count() > 1)
+                  .OrderByDescending(s => s.RoundsWon).ToList();
+            
+            if(scores.Count == 1)
+            {
+                return scores.Select(s => new Score { WinnerTeamId = s.TeamId, Rule = WinnerRule.MoreRoundsWon }).FirstOrDefault();
+            }
+
+            if (scores.Select(s => s.RoundsWon).Distinct().Count() != 1)
             {
                 return new Score
                 {
@@ -90,7 +95,7 @@ namespace DiscordBot.Game.CoinWar.Models
                     Rule = WinnerRule.MoreRoundsWon
                 };
             }
-            else if (scores.Select(s => s.CoinsLeft).Distinct().Count() > 1)
+            else if (scores.Select(s => s.CoinsLeft).Distinct().Count() != 1)
             {
                 return new Score
                 {
