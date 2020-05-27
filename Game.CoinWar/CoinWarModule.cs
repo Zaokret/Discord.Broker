@@ -30,7 +30,6 @@ namespace DiscordBot.Game.CoinWar
         [Summary("Creates/Joins a coin war game instance.")]
         public async Task JoinOrCreate(IUser user)
         {
-            
             if(Context.User.Id == user.Id)
             {
                 await Context.User.SendMessageAsync("You can't play with yourself.");
