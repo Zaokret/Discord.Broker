@@ -68,8 +68,18 @@ namespace DiscordBot.Game.CoinWar
 
             if (pendingGame.IsSpecified)
             {
-                await StartAsync(pendingGame.Value);
-                PendingGames.Remove(pendingGame.Value);
+                try
+                {
+                    await StartAsync(pendingGame.Value);
+                }
+                catch(Exception ex)
+                {
+                    throw ex;
+                }
+                finally
+                {
+                    PendingGames.Remove(pendingGame.Value);
+                }
             }
             else
             {
