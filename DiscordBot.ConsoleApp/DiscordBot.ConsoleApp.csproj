@@ -22,6 +22,7 @@
   <ItemGroup>
     <ProjectReference Include="..\DiscordBot.Broker\DiscordBot.Broker.csproj" />
     <ProjectReference Include="..\DiscordBot.Core\DiscordBot.Core.csproj" />
+    <ProjectReference Include="..\DiscordBot.Game.Mafia\DiscordBot.Game.Mafia.csproj" />
     <ProjectReference Include="..\DiscordBot.Infrastructure\DiscordBot.Infrastructure.csproj" />
     <ProjectReference Include="..\Game.CoinWar\DiscordBot.Game.CoinWar.csproj" />
   </ItemGroup>

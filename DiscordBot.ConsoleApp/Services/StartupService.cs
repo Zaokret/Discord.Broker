@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using DiscordBot.Broker;
 using DiscordBot.ConsoleApp;
+using DiscordBot.Game.Mafia;
 
 namespace DiscordBot.Services
 {
@@ -48,6 +49,10 @@ namespace DiscordBot.Services
                 await _commands.AddModuleAsync(typeof(CoinModule), _provider);
                 await _commands.AddModuleAsync(typeof(CoinWarModule), _provider);
                 await _commands.AddModuleAsync(typeof(PollModule), _provider);
+            }
+            else
+            {
+                await _commands.AddModuleAsync(typeof(MafiaModule), _provider);
             }
         }
     }
