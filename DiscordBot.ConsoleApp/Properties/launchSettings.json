@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "DiscordBot.ConsoleApp": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "Environment": "Development"
+      }
+    }
+  }
+}

@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using DiscordBot.Broker;
+using DiscordBot.ConsoleApp;
 
 namespace DiscordBot.Services
 {
@@ -37,14 +38,17 @@ namespace DiscordBot.Services
             if (string.IsNullOrWhiteSpace(discordToken))
                 throw new Exception("Please enter a valid bot's token.");
 
-            await _discord.LoginAsync(TokenType.Bot, discordToken);     // Login to discord
-            await _discord.StartAsync();                                // Connect to the websocket
+            await _discord.LoginAsync(TokenType.Bot, discordToken);     
+            await _discord.StartAsync();                                
 
             _commands.AddTypeReader<List<string>>(new ListOfStringTypeReader());
 
-            await _commands.AddModuleAsync(typeof(CoinModule), _provider);
-            await _commands.AddModuleAsync(typeof(CoinWarModule), _provider);
-            await _commands.AddModuleAsync(typeof(PollModule), _provider);
+            if(EnvironmentConfiguration.IsProduction())
+            {
+                await _commands.AddModuleAsync(typeof(CoinModule), _provider);
+                await _commands.AddModuleAsync(typeof(CoinWarModule), _provider);
+                await _commands.AddModuleAsync(typeof(PollModule), _provider);
+            }
         }
     }
 }

@@ -16,6 +16,7 @@ using DiscordBot.Broker;
 using Discord.Addons.Interactive;
 using DiscordBot.Game.CoinWar;
 using DiscordBot.Infrastructure.Repositories;
+using DiscordBot.ConsoleApp;
 
 namespace DiscordBot
 {
@@ -43,7 +44,11 @@ namespace DiscordBot
       
             provider.GetRequiredService<LoggingService>();      
             provider.GetRequiredService<CommandHandler>();
-            provider.GetRequiredService<ReactionController>();
+
+            if(EnvironmentConfiguration.IsProduction())
+            {
+                provider.GetRequiredService<ReactionController>();
+            }
 
             await provider.GetRequiredService<StartupService>().StartAsync();
         }
