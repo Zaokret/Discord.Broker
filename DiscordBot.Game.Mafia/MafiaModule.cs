@@ -22,6 +22,14 @@ namespace DiscordBot.Game.Mafia
             _service = service ?? throw new ArgumentNullException(nameof(service));
         }
 
+        /* TODO REMOVE PENDING GAME WHEN END
+           PendingGames.Remove(game);
+        */
+
+        // TODO RENAME COMMANDS TO BE GAME UNIQUE
+
+        /* PREPARATION COMMANDS */
+
         [Command("werewolfs")]
         [Summary("Creates a pending warewolf game.")]
         public async Task CreatePendingGame()
@@ -51,7 +59,8 @@ namespace DiscordBot.Game.Mafia
                 PendingGame game = PendingGames.FirstOrDefault(g => g.Id == gameId);
                 if(game.Active)
                 {
-                    await ReplyAsync("You left the game.");
+                    _service.RemoveUserFromPlay(Context.User);
+                    await _service.NotifyPlayerLeft(Context.User);
                 }
                 else
                 {
@@ -62,7 +71,7 @@ namespace DiscordBot.Game.Mafia
         }
 
         [Command("join")]
-        [Summary("Joins a pending warewolf game.")]
+        [Summary("Joins a pending warewolf game and initialises when the last player joins.")]
         public async Task JoinPendingGame(string gameId)
         {
             if (PendingGames.All(g => g.Id != gameId))
@@ -86,14 +95,8 @@ namespace DiscordBot.Game.Mafia
                     game.Users.Add(Context.User);
                     if (game.Users.Count == 8)
                     {
-                        // start
                         game.Active = true;
-                        await ReplyAsync($"Game started.");
-
-                        // game loop
-
-                        // end
-                        PendingGames.Remove(game);
+                        await _service.InitialiseGame(Context, game);
                     }
                     else
                     {
@@ -103,29 +106,119 @@ namespace DiscordBot.Game.Mafia
             }
         }
 
-        private const string ReadyCommand = "ready";
-        [RequiredCurrentUser]
-        [Command(ReadyCommand)]
-        [Summary("Starts the game once everyone reacts that they are ready.")]
-        public async Task CreateReadyCheck()
+        /* PLAYER */
+
+        private const string Excommunicate = "excommunicate";
+        [RequiredGameActive]
+        [Command(Excommunicate)]
+        [Summary("Day phase voting.")]
+        public async Task VoteToExcommunicate(IUser user)
         {
-            if(_service.IsValidCommand(ReadyCommand, Context.Channel.Id))
+            if (_service.IsCommandValid(Excommunicate, Context.Channel.Id))
             {
-                IUserMessage message = await ReplyAsync("React if you're ready.");
-                // initiate a ready check
+                if(!_service.IsUserPlaying(user.Id))
+                {
+                    await ReplyAsync("Player not in the game.");
+                }
+                else if (!_service.IsUserAlive(user.Id))
+                {
+                    await ReplyAsync("You can't vote to excommunicate a player who was already excommunicated or dead.");
+                }
+                else
+                {
+                    await _service.StartSacrificePoll(user);
+                }
             }
         }
+
+        private const string Sacrifice = "sacrifice";
+        [RequiredGameActive]
+        [Command(Sacrifice)]
+        [Summary("Night phase voting.")]
+        public async Task VoteToSacrifice(IUser user)
+        {
+            if (_service.IsCommandValid(Sacrifice, Context.Channel.Id))
+            {
+                if (!_service.IsUserPlaying(user.Id))
+                {
+                    await ReplyAsync("Player not in the game.");
+                }
+                else if (!_service.IsUserInTeam(user.Id, MafiaService.TeamType.Villager))
+                {
+                    await ReplyAsync("You can't vote to sacrifice a cultist.");
+                }
+                else if(!_service.IsUserAlive(user.Id))
+                {
+                    await ReplyAsync("You can't vote to sacrifice a player who was already sacrificed.");
+                } 
+                else
+                {
+                    await _service.StartSacrificePoll(user);
+                }
+            }
+        }
+
+        /* PLAYER AND INTERNAL */
+
+        private const string Visions = "vision";
+        [Command(Visions)]
+        [Summary("Internal command and external command checking players role and starting the day phase.")]
+        public async Task CheckRole(IUser user = null)
+        {
+            if(_service.IsSeer(Context.User.Id) && _service.IsPhase(MafiaService.Phase.Vision))
+            {
+                if (!_service.IsUserPlaying(user.Id))
+                {
+                    await ReplyAsync("Player not in the game.");
+                }
+                else
+                {
+                    await _service.ResolveVisionPhase(user);
+                    await _service.StartDayPhase();
+                    await _service.StartPhaseCounter(MafiaService.Phase.Day);
+                }
+            }
+        }
+
+        /* INTERNAL */
 
         private const string StartCommand = "start";
         [RequiredCurrentUser]
         [Command(StartCommand)]
-        [Summary("Starts the game once everyone reacts that they are ready.")]
+        [Summary("Internal command to starts the game once everyone reacts that they are ready.")]
         public async Task StartAfterReady()
         {
-            if (_service.IsValidCommand(StartCommand, Context.Channel.Id))
+            if (_service.IsCommandValid(StartCommand, Context.Channel.Id))
             {
-                // remove ready check monitors
-                // start at sunset
+                await _service.StartGame();
+            }
+        }
+
+        private const string Remove = "remove";
+        [RequiredCurrentUser]
+        [Command(Remove)]
+        [Summary("Internal command for removing players at the end of the day phase and starting the night phase.")]
+        public async Task RemovePlayer(IUser user = null)
+        {
+            if (_service.IsCommandValid(Remove, Context.Channel.Id))
+            {
+                await _service.ResolveDayPhase(user);
+                await _service.StartNightPhase();
+                await _service.StartPhaseCounter(MafiaService.Phase.Night);
+            }
+        }
+
+        private const string Kill = "kill";
+        [RequiredCurrentUser]
+        [Command(Kill)]
+        [Summary("Internal command for killing players at the end of the night cycle and starting the day phase.")]
+        public async Task KillPlayer(IUser user = null)
+        {
+            if (_service.IsCommandValid(Kill, Context.Channel.Id))
+            {
+                await _service.ResolveNightPhase(user);
+                await _service.StartVisionPhase();
+                await _service.StartPhaseCounter(MafiaService.Phase.Vision);
             }
         }
     }
