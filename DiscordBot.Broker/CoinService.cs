@@ -36,6 +36,11 @@ namespace DiscordBot.Broker
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         }
 
+        public async Task<int> GetFundsByUserId(ulong userId)
+        {
+            return (int)(await _repository.GetCoinsByUserIdAsync(userId));
+        }
+
         private async Task<RankedUser> GetRankedUser(UserEntity entity, int rank, List<SocketGuildUser> users)
         {
             SocketGuildUser guildUser = users.FirstOrDefault(u => u.Id == entity.UserId);

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DiscordBot.Game.Mafia
+namespace DiscordBot.Game.Mafia.Attributes
 {
     public class RequiredCurrentUserAttribute : PreconditionAttribute
     {

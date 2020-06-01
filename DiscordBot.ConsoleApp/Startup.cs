@@ -78,6 +78,7 @@ namespace DiscordBot
             .AddSingleton<MafiaService>()
             .AddScoped<CoinService>()
             .AddTransient<InteractiveService>()
+            .AddTransient<PollService>()
             .AddSingleton(Configuration);           
         }
   }
