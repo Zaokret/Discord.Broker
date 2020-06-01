@@ -28,13 +28,14 @@ namespace DiscordBot.Services
 
     private async Task HandleCommandAsync(SocketMessage messageParam)
     {
+            
       if (!(messageParam is SocketUserMessage message)) return;
 
       int argPos = 0;
 
       if (!(message.HasCharPrefix(_config.CommandPrefix, ref argPos) ||
           message.HasMentionPrefix(_client.CurrentUser, ref argPos)) ||
-          message.Author.IsBot)
+          (message.Author.IsBot && _client.CurrentUser.Id != messageParam.Author.Id))
         return;
 
       var context = new SocketCommandContext(_client, message);

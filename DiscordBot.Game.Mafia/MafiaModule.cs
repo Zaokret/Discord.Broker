@@ -9,18 +9,24 @@ using System.Threading.Tasks;
 
 namespace DiscordBot.Game.Mafia
 {
+    // TODO SPLIT INTO PARTIAL CLASSES
     public class MafiaModule : ModuleBase<SocketCommandContext>
     {
-        private static List<PendingGame> PendingGames;
+        private static List<PendingGame> PendingGames = new List<PendingGame>();
+        private readonly MafiaService _service;
+        private readonly DiscordSocketClient _client;
+
+        public MafiaModule(MafiaService service, DiscordSocketClient client)
+        {
+            _client = client ?? throw new ArgumentNullException(nameof(client));
+            _service = service ?? throw new ArgumentNullException(nameof(service));
+        }
 
         [Command("werewolfs")]
         [Summary("Creates a pending warewolf game.")]
         public async Task CreatePendingGame()
         {
-            if (PendingGames == null)
-                PendingGames = new List<PendingGame>();
             PendingGame game = new PendingGame(Context.User);
-
             if(PendingGames.Any(g => g.Active))
             {
                 await ReplyAsync("There could be only one active game the a time. Wait until the active group finishes to initiate a game. Message 'JJ 3maj' if you find yourself waiting for your time to play too often.");
@@ -36,7 +42,7 @@ namespace DiscordBot.Game.Mafia
         [Summary("Leaves a pending warewolf game.")]
         public async Task LeavePendingGame(string gameId)
         {
-            if (PendingGames == null || PendingGames.All(g => g.Id != gameId))
+            if (PendingGames.All(g => g.Id != gameId))
             {
                 await ReplyAsync("Game not found.");
             }
@@ -59,7 +65,7 @@ namespace DiscordBot.Game.Mafia
         [Summary("Joins a pending warewolf game.")]
         public async Task JoinPendingGame(string gameId)
         {
-            if (PendingGames == null || PendingGames.All(g => g.Id != gameId))
+            if (PendingGames.All(g => g.Id != gameId))
             {
                 await ReplyAsync("Game not found.");
             }
@@ -94,6 +100,32 @@ namespace DiscordBot.Game.Mafia
                         await ReplyAsync($"{8 - game.Users.Count} more players need to join to start the game.");
                     }
                 }
+            }
+        }
+
+        private const string ReadyCommand = "ready";
+        [RequiredCurrentUser]
+        [Command(ReadyCommand)]
+        [Summary("Starts the game once everyone reacts that they are ready.")]
+        public async Task CreateReadyCheck()
+        {
+            if(_service.IsValidCommand(ReadyCommand, Context.Channel.Id))
+            {
+                IUserMessage message = await ReplyAsync("React if you're ready.");
+                // initiate a ready check
+            }
+        }
+
+        private const string StartCommand = "start";
+        [RequiredCurrentUser]
+        [Command(StartCommand)]
+        [Summary("Starts the game once everyone reacts that they are ready.")]
+        public async Task StartAfterReady()
+        {
+            if (_service.IsValidCommand(StartCommand, Context.Channel.Id))
+            {
+                // remove ready check monitors
+                // start at sunset
             }
         }
     }

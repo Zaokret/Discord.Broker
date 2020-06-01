@@ -14,12 +14,48 @@ namespace DiscordBot.Game.Mafia
     public class MafiaService
     {
         private readonly DiscordSocketClient _client;
-
+        private GameObject ActiveGame;
+        
         public MafiaService(DiscordSocketClient client)
         {
             _client = client ?? throw new ArgumentNullException(nameof(client));
         }
-        
+
+        #region Vote Monitoring
+        private ICollection<Func<Cacheable<IUserMessage, ulong>, ISocketMessageChannel, SocketReaction, Task>> VoteMonitors = 
+                new List<Func<Cacheable<IUserMessage, ulong>, ISocketMessageChannel, SocketReaction, Task>>();
+
+        Func<Cacheable<IUserMessage, ulong>, ISocketMessageChannel, SocketReaction, Task>
+        CreateVoteMonitor(ulong messageId)
+        {
+            return async (Cacheable<IUserMessage, ulong> userMessageProvider, ISocketMessageChannel channel, SocketReaction reaction) =>
+            {
+                if(reaction.MessageId == messageId)
+                {
+                    await CommandChannel.SendMessageAsync("$start");
+                    // channel.SendMessageAsync("Reaction added to the monitored message.");
+                }
+            };
+        }
+
+        private void RemoteMonitors()
+        {
+            foreach (var monitor in VoteMonitors)
+            {
+                _client.ReactionAdded -= monitor;
+            }
+        }
+
+        private void StartMonitoring(ulong messageId)
+        {
+            Func<Cacheable<IUserMessage, ulong>, ISocketMessageChannel, SocketReaction, Task> monitor 
+                = CreateVoteMonitor(messageId);
+            _client.ReactionAdded += monitor;
+            VoteMonitors.Add(monitor);
+        }
+        #endregion
+
+        #region Game classes
         enum TeamType
         {
             Werewolf,
@@ -73,35 +109,7 @@ namespace DiscordBot.Game.Mafia
             public IReadOnlyCollection<Player> Villagers => new ReadOnlyCollection<Player>(Players.Where(p => p.Team == TeamType.Villager).ToList());
             public Player Seer => Players.FirstOrDefault(p => p.Role == SpecialRole.Seer);
         }
-
-        public async Task StartGame(SocketCommandContext context, PendingGame pendingGame)
-        {
-            // SETUP
-            SocketGuild guild = GetGuildByContext(context);
-            GameObject game = new GameObject(pendingGame.Users.ToList());
-            RestTextChannel village = await CreatePrivateGroupTextChannel(
-                guild, 
-                "Village", 
-                game.Players.Select(p => p.User));
-
-            RestTextChannel den = await CreatePrivateGroupTextChannel(
-                guild, 
-                "Werewolf Den", 
-                game.Werewolfs.Select(p => p.User));
-
-            // NOTIFY - roles, explain rules, win conditions
-            await Task.WhenAll(game.Players.Select(p =>
-            {
-                return p.User.SendMessageAsync($"You are a {p.Role}.");
-            }));
-
-            // GAME LOOP
-            bool winnerFound = false;
-            while(!winnerFound)
-            {
-
-            }
-        }
+        #endregion  
 
         /*
          
@@ -138,6 +146,93 @@ namespace DiscordBot.Game.Mafia
                     players vote who to lynch ( $lynch @someone )
 
          */
+
+        /* TESTING
+        public async Task CreateReadyCheck(SocketCommandContext context, ulong messageId)
+        {
+            SocketGuild guild = GetGuildByContext(context);
+            StartMonitoring(messageId);
+
+            CommandChannel = await CreatePrivateGroupTextChannel(
+                guild,
+                "command-channel",
+                new[] { _client.CurrentUser });
+
+            GameChannels = new List<GameChannel>(new[] 
+            {
+                new GameChannel(CommandChannel, new [] { "sunset", "sunrise", "visions", "start" })
+            });
+            await UnlockChannelForUsers(CommandChannel, new[] { _client.CurrentUser });
+        }
+
+        public async Task Start()
+        {
+            await CommandChannel.SendMessageAsync("Starting...");
+            await Task.Delay(5000);
+            RemoteMonitors();
+            await CommandChannel.DeleteAsync();
+        }
+        */
+
+        public async Task StartGame(SocketCommandContext context, PendingGame pendingGame)
+        {
+            // TODO EXTRACT STRINGS TO CONFIG
+
+            // SETUP
+            SocketGuild guild = GetGuildByContext(context);
+            ActiveGame = new GameObject(pendingGame.Users.ToList());
+            DayChannel = await CreatePrivateGroupTextChannel(
+                guild, 
+                "Village",
+                ActiveGame.Players.Select(p => p.User));
+
+            NightChannel = await CreatePrivateGroupTextChannel(
+                guild, 
+                "Werewolf Den",
+                ActiveGame.Werewolfs.Select(p => p.User));
+
+            CommandChannel = await CreatePrivateGroupTextChannel(
+                guild,
+                "command-channel",
+                new[] { _client.CurrentUser });
+
+            GameChannels = new List<GameChannel>(new[]
+            {
+                new GameChannel(DayChannel, new [] { "excomunicate", "role" }),
+                new GameChannel(NightChannel, new [] { "sacrifice", "role" }),
+                new GameChannel(CommandChannel, new [] { "sunset", "sunrise", "visions", "start", "ready" })
+            });
+
+            // NOTIFY - roles, explain rules, win conditions
+            await Task.WhenAll(ActiveGame.Players.Select(p =>
+            {
+                return p.User.SendMessageAsync($"You are a {p.Role}.");
+            }));
+
+            // END WITH READY COMMAND
+        }
+
+        #region Channel
+        private RestTextChannel DayChannel;
+        private RestTextChannel NightChannel;
+        private RestTextChannel CommandChannel;
+        private ICollection<GameChannel> GameChannels = new List<GameChannel>();
+        class GameChannel
+        {
+            public GameChannel(RestTextChannel channel, IEnumerable<string> commands)
+            {
+                Channel = channel;
+                Commands = commands;
+            }
+
+            public RestTextChannel Channel { get; set; }
+            public IEnumerable<string> Commands { get; set; }
+        }
+
+        public bool IsValidCommand(string commandName, ulong channelId)
+        {
+            return GameChannels.Any(c => c.Channel.Id == channelId && c.Commands.Contains(commandName));
+        }
 
         private SocketGuild GetGuildByContext(SocketCommandContext context)
         {
@@ -198,6 +293,6 @@ namespace DiscordBot.Game.Mafia
             }));
             return channel;
         }
-
+        #endregion  
     }
 }
