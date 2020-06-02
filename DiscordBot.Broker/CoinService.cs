@@ -108,7 +108,6 @@ namespace DiscordBot.Broker
                 Wallet wallet = new Wallet(entity.Funds);
                 wallet.Deposit(funds);
                 await _repository.UpdateFundsAsync(userId, wallet.Funds);
-                await _repository.SaveAsync();
                 return wallet.Funds;
             }
             else
@@ -119,9 +118,21 @@ namespace DiscordBot.Broker
                     Funds = funds
                 };
                 await _repository.AddUserAsync(user);
-                await _repository.SaveAsync();
                 return funds;
             }
+        }
+
+        public async Task<float> RemoveFunds(ulong userId, float funds)
+        {
+            UserEntity entity = await _repository.GetUserByIdAsync(userId);
+            if (entity != null)
+            {
+                Wallet wallet = new Wallet(entity.Funds);
+                wallet.Widthdraw(funds);
+                await _repository.UpdateFundsAsync(userId, wallet.Funds);
+                return wallet.Funds;
+            }
+            return 0;
         }
 
         public async Task<float> AddCoin(ulong userId, Coin coin)
@@ -131,17 +142,12 @@ namespace DiscordBot.Broker
 
         public async Task<float> RemoveCoin(ulong userId, Coin coin)
         {
-            UserEntity entity = await _repository.GetUserByIdAsync(userId);
-            if (entity != null)
-            {
-                Wallet wallet = new Wallet(entity.Funds);
-                wallet.Widthdraw(coin.Value);
-                await _repository.UpdateFundsAsync(userId, wallet.Funds);
-                await _repository.SaveAsync();
-                return wallet.Funds;
-            }
-            return 0;
+            return await RemoveFunds(userId, coin.Value);
         }
 
+        public async Task SaveAsync()
+        {
+            await _repository.SaveAsync();
+        }
     }
 }

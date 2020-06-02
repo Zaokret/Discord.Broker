@@ -30,6 +30,20 @@ namespace DiscordBot.Game.Mafia.Views
             return name;
         }
 
+        public static string PhasePhrase(PhaseType phase)
+        {
+            string name = string.Empty;
+            switch (phase)
+            {
+                case PhaseType.Day: name = $"Daylight beckons senators to the {Channel.Public()}."; break;
+                case PhaseType.Night: name = $"Sun bleeds bright red on the horizon as cultist gather at the {Channel.Private()}."; break;
+                case PhaseType.Investigation: name = "Taking the auspices..."; break;
+                default:
+                    throw new NotImplementedException($"{nameof(phase)} : {phase}");
+            }
+            return name;
+        }
+
         public static string Group(GroupType group)
         {
             string name = string.Empty;

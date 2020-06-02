@@ -68,6 +68,7 @@ namespace DiscordBot.Controllers
             }
 
             float funds = await _service.AddCoin(userMessage.Author.Id, coin);
+            await _service.SaveAsync();
             Console.WriteLine($"{userMessage.Author.Id} was awarded one {coin.Name} by user with id {reaction.UserId}. New total {funds}");
         }
 
@@ -82,6 +83,7 @@ namespace DiscordBot.Controllers
                 return;
 
             float funds = await _service.RemoveCoin(userMessage.Author.Id, coin);
+            await _service.SaveAsync();
             Console.WriteLine($"{userMessage.Author.Id} lost one {coin.Name} because user with id {reaction.UserId} revoked it. New total {funds}");
         }
     }
