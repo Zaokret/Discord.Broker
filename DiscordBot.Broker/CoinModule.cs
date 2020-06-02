@@ -52,6 +52,34 @@ namespace DiscordBot.Modules
             await Context.Channel.SendMessageAsync("", false, EmbedViews.Leaderboard(leaderboard));
         }
 
+        [Command("transfer")]
+        [Summary("Transfers specified funds from the issuer to the specified user")]
+        public async Task Transfer(int funds, IUser recipient)
+        {
+            IUser sender = Context.User;
+            if(funds < 1)
+            {
+                await ReplyAsync("Amount must be greater than zero.");
+            }
+            else if((await _userRepository.GetCoinsByUserIdAsync(sender.Id)) < funds)
+            {
+                await ReplyAsync("Insufficient funds.");
+            }
+            else if(recipient == null)
+            {
+                await ReplyAsync("Recipient was not specified.");
+            }
+            else
+            {
+                await _service.RemoveFunds(sender.Id, funds);
+                await _service.AddFunds(recipient.Id, funds);
+                await Task.WhenAll(new[] {
+                    sender.SendMessageAsync($"{funds} coins sent to {recipient.Username}."),
+                    recipient.SendMessageAsync($"{funds} coins received from {sender.Username}.")
+                }); 
+            }
+        }
+
         [Command("help")]
         [Summary("Send help instructions.")]
         public async Task GetHelp()
