@@ -34,25 +34,15 @@ namespace DiscordBot.Game.Mafia
             return coins >= PriceConfiguration.CostOfEntry;
         }
 
-        
-        [Command("dividerules")]
-        public async Task SendRules()
-        {
-            foreach (Embed message in GameRules.Of())
-            {
-                await ReplyAsync(string.Empty, false, message);
-            }
-        }
-
         [Command("divide")]
         [Summary("Creates a pending warewolf game.")]
         public async Task CreatePendingGame()
         {
-            if(!(await CanPayCostOfEntry(Context.User.Id)))
+            /* TODO RETURN IN PROD if(!(await CanPayCostOfEntry(Context.User.Id)))
             {
                 await ReplyAsync(ErrorView.NotEnoughFunds());
-            }
-            else if(PendingGameService.PendingGames.Any(g => g.Active))
+            }*/
+            if(PendingGameService.PendingGames.Any())
             {
                 await ReplyAsync(ErrorView.MultipleGames());
             }
@@ -66,25 +56,30 @@ namespace DiscordBot.Game.Mafia
         
         [Command("join")]
         [Summary("Joins a pending warewolf game and initialises when the last player joins.")]
-        public async Task JoinPendingGame(string gameId)
+        public async Task JoinPendingGame()
         {
-            if (!(await CanPayCostOfEntry(Context.User.Id)))
+            // TODO VALIDATE AGAINST DOUBLE JOINS
+            /*TODO RETURN IN PROD if (!(await CanPayCostOfEntry(Context.User.Id)))
             {
                 await ReplyAsync(ErrorView.NotEnoughFunds());
-            }
-            else if (PendingGameService.PendingGames.All(g => g.Id != gameId))
+            }*/
+            if (PendingGameService.PendingGames.Count == 0)
             {
                 await ReplyAsync(ErrorView.NotFound());
             }
-            else if(PendingGameService.PendingGames.Any(g => g.Id == gameId && 
-                DateTime.Now.Subtract(g.CreatedAt).Minutes <= PendingGameService.ExpirationInMinutes))
+            /* TODO BUGFIX else if(PendingGameService.PendingGames.Any(g => g.Id == gameId && 
+                DateTime.Now.Subtract(g.CreatedAt).Minutes >= PendingGameService.ExpirationInMinutes))
             {
                 PendingGameService.PendingGames.Remove(PendingGameService.PendingGames.FirstOrDefault(g => g.Id == gameId));
                 await ReplyAsync(ErrorView.GameExpired(PendingGameService.ExpirationInMinutes));
+            }*/
+            else if(PendingGameService.PendingGames.Any(g => g.Users.Any(u => u.Id == Context.User.Id)))
+            {
+                await ReplyAsync(ErrorView.AlreadyInLobby());
             }
             else
             {
-                PendingGame game = PendingGameService.PendingGames.FirstOrDefault(g => g.Id == gameId);
+                PendingGame game = PendingGameService.PendingGames.FirstOrDefault();
                 if(game.Active)
                 {
                     await ReplyAsync(ErrorView.InProgress());
@@ -92,9 +87,10 @@ namespace DiscordBot.Game.Mafia
                 else
                 {
                     game.Users.Add(Context.User);
-                    if (game.Users.Count == 8)
+                    if (game.Users.Count == 4) // TODO RETURN IN PROD 8
                     {
                         game.Active = true;
+                        await ReplyAsync(InfoView.GameStarting());
                         await _game.InitialiseGame(Context, game);
                     }
                     else
@@ -107,15 +103,15 @@ namespace DiscordBot.Game.Mafia
 
         [Command("leave")]
         [Summary("Leaves a pending warewolf game.")]
-        public async Task LeavePendingGame(string gameId)
+        public async Task LeavePendingGame()
         {
-            if (PendingGameService.PendingGames.All(g => g.Id != gameId))
+            if (PendingGameService.PendingGames.Count == 0)
             {
                 await ReplyAsync(ErrorView.NotFound());
             }
             else
             {
-                PendingGame game = PendingGameService.PendingGames.FirstOrDefault(g => g.Id == gameId);
+                PendingGame game = PendingGameService.PendingGames.FirstOrDefault();
                 if (game.Active)
                 {
                     _game.RemoveUserFromPlay(Context.User);
@@ -134,17 +130,12 @@ namespace DiscordBot.Game.Mafia
         public async Task PollGameRole(IUser user)
         {
             user = user ?? Context.User;
-            PollCommandArguments args = new PollCommandArguments
-            {
-                Title = $"What is {user.Username}'s role ?",
-                Description = $"Vote for the role you believe {user.Username} has."
-            };
-            
-            Poll rolePoll = _poll.CreatePoll(args, GameElement.GetRoleNames().ToList(), Context.User);
-            await ReplyAsync(string.Empty, false, rolePoll.Message);
+            Poll rolePoll = _poll.CreatePoll(GameElement.Poll.Role(user.Username), GameElement.GetRoleNames().ToList(), Context.User);
+            IUserMessage message = await ReplyAsync(string.Empty, false, rolePoll.Message);
+            await message.AddReactionsAsync(rolePoll.Emojis.Select(e => new Emoji(e)).ToArray());
         }
 
-        [RequiredGameActive]
+        [RequiredGamePlayerAttribute]
         [Command("excommunicate")]
         [Summary("All players vote to kick one player that they suspect is a part of the informed minority.")]
         public async Task VoteToExcommunicate(IUser user)
@@ -161,12 +152,12 @@ namespace DiscordBot.Game.Mafia
                 }
                 else
                 {
-                    await _game.StartSacrificePoll(user);
+                    await _game.StartExcommunicatePoll(target: user, author: Context.User);
                 }
             }
         }
 
-        [RequiredGameActive]
+        [RequiredGamePlayerAttribute]
         [Command("sacrifice")]
         [Summary("Informed minority group votes to kill one member of the uninformed majority.")]
         public async Task VoteToSacrifice(IUser user)
@@ -187,19 +178,17 @@ namespace DiscordBot.Game.Mafia
                 } 
                 else
                 {
-                    await _game.StartSacrificePoll(user);
+                    await _game.StartSacrificePoll(target: user, author: Context.User);
                 }
             }
         }
 
-        [RequiredGameActive]
+        [RequiredCurrentUser]
         [Command("signs")]
-        [Summary("Internal command and external command checking players role and starting the day phase.")]
+        [Summary("Internal command checking players role and starting the day phase.")]
         public async Task CheckRole(IUser user = null)
         {
-            if((_game.IsInvestigator(Context.User.Id) || 
-                _client.CurrentUser.Id == Context.User.Id)
-            && _game.IsPhase(PhaseType.Investigation))
+            if (_game.IsCommandValid("signs", Context.Channel.Id))
             {
                 if (user == null || _game.IsUserPlaying(user.Id))
                 {

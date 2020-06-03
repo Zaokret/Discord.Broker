@@ -19,6 +19,7 @@ namespace DiscordBot.Game.Mafia
     {
         private readonly DiscordSocketClient _client;
         private readonly CoinService _coin;
+        private readonly PollService _poll;
 
         private GameObject ActiveGame;
 
@@ -33,58 +34,78 @@ namespace DiscordBot.Game.Mafia
         private TimeSpan DefaultPhaseCounter = TimeSpan.FromMinutes(10);
         private TimeSpan VisionPhaseCounter = TimeSpan.FromMinutes(4);
         private ICollection<GamePhase> Phases = new List<GamePhase>();
-        
-        public MafiaService(DiscordSocketClient client, CoinService coin)
+
+        private const string YES = "👍";
+
+        public MafiaService(DiscordSocketClient client, CoinService coin, PollService poll)
         {
+            _poll = poll ?? throw new ArgumentNullException(nameof(poll));
             _client = client ?? throw new ArgumentNullException(nameof(client));
             _coin = coin ?? throw new ArgumentNullException(nameof(coin));
         }
 
         #region Create/Dispose resources
-
+        
         public async Task InitialiseGame(SocketCommandContext context, PendingGame pendingGame)
         {
-            // TODO EXTRACT STRINGS TO CONFIG
-
-            // SETUP
-            SocketGuild guild = GetGuildByContext(context);
             ActiveGame = new GameObject(pendingGame.Users.ToList());
+            await CreateChannels(context, pendingGame);
+            await SendGameRules();
+            await InitiateReadyPoll();
+            await UnlockChannelForUsers(DayChannel, ActiveGame.Players.Select(p => p.User));
+        }
+
+        public async Task CreateChannels(SocketCommandContext context, PendingGame pendingGame)
+        {
+            SocketGuild guild = GetGuildByContext(context);
+
             DayChannel = await CreatePrivateGroupTextChannel(
                 guild,
                 GameElement.Channel.Public(),
-                ActiveGame.Players.Select(p => p.User));
+                ActiveGame.Players.Select(p => p.User),
+                GameElement.ChannelDescription.Public());
 
             NightChannel = await CreatePrivateGroupTextChannel(
                 guild,
                 GameElement.Channel.Private(),
-                ActiveGame.Informed.Select(p => p.User));
+                ActiveGame.Players.Select(p => p.User),
+                GameElement.ChannelDescription.Private(ActiveGame.Uninformed.ToList()));
 
             CommandChannel = await CreatePrivateGroupTextChannel(
                 guild,
                 GameElement.Channel.Command(),
-                new[] { _client.CurrentUser });
+                new[] { _client.CurrentUser },
+                string.Empty);
 
             GameChannels = new List<GameChannel>(new[]
             {
                 new GameChannel(DayChannel, new [] { "excommunicate" }),
                 new GameChannel(NightChannel, new [] { "sacrifice" }),
-                new GameChannel(CommandChannel, new [] { "start", "kill", "kick" })
+                new GameChannel(CommandChannel, new [] { "start", "kill", "kick", "signs" })
             });
+        }
 
-            // NOTIFY
-            await DayChannel.SendMessageAsync("Game rules.");
+        public async Task SendGameRules()
+        {
+            await Task.WhenAll(GameRules.Of().Select(rule =>
+            {
+                return DayChannel.SendMessageAsync(string.Empty, false, rule);
+            }));
+        }
 
-            // READY PHASE
-            await UnlockChannelForUsers(DayChannel, ActiveGame.Players.Select(p => p.User));
-            RestUserMessage readyMessage = await DayChannel.SendMessageAsync("Everyone react to this when you are ready and we start with the night phase.");
-
-            // ADD START HANDLER
-            StartMonitoring(CreateMonitor(readyMessage.Id, null, MonitorType.Ready));
+        public async Task InitiateReadyPoll()
+        {
+            Poll readyPoll = _poll.CreatePoll(GameElement.Poll.Ready(), new List<string>(), _client.CurrentUser);
+            IUserMessage message = await DayChannel.SendMessageAsync(string.Empty, false, readyPoll.Message);
+            await message.AddReactionsAsync(readyPoll.Emojis.Select(e => new Emoji(e)).ToArray());
+            StartMonitoring(CreateMonitor(message.Id, null, MonitorType.Ready));
         }
 
         private async Task EndGameWithWinner(GroupType winningGroup)
         {
-            await RewardPlayers();
+            var players = await RewardPlayers();
+            await DayChannel.SendMessageAsync(GameEndView.Message(winningGroup));
+            await DayChannel.SendMessageAsync(string.Empty, false, GameEndView.Of(winningGroup, players));
             await Dispose();
         }
 
@@ -149,39 +170,69 @@ namespace DiscordBot.Game.Mafia
         
         public async Task StartGame()
         {
-            await ChargeCostOfEntry();
+            // TODO RETURN IN PROD await ChargeCostOfEntry();
             RemoveMonitors();
             await Task.WhenAll(ActiveGame.Players.Select(p =>
             {
-                return p.User.SendMessageAsync($"Your role is {p.Role}.");
+                return p.User.SendMessageAsync($"Your role is {GameElement.Role(p.Role)}.");
             }));
 
-            await LockChannelForUsers(DayChannel, ActiveGame.Players.Select(p => p.User));
-            await DayChannel.SendMessageAsync("Cultists are gathering.");
+            await DayChannel.SendMessageAsync(GameElement.PhasePhrase(PhaseType.Night));
+            await NightChannel.SendMessageAsync(GameElement.PhaseInstruction(PhaseType.Night));
 
             await UnlockChannelForUsers(NightChannel, ActiveGame.Informed.Select(p => p.User));
-            await NightChannel.SendMessageAsync("Vote who to sacrifice");
+            await LockChannelForUsers(DayChannel, ActiveGame.Players.Select(p => p.User));
         }
 
         public async Task ResolveNightPhase(IUser lastNightVictim)
         {
             ResolvePhase(lastNightVictim, PhaseType.Night);
-
-            await LockChannelForUsers(NightChannel, ActiveGame.Informed.Select(p => p.User));
             string nightMessage = lastNightVictim != null
-                ? $"{lastNightVictim.Username} is the chosen target."
-                : "Sunrise is on the horizon and there will be no victims tonight.";
+                ? GameElement.VictimChosen(lastNightVictim.Username)
+                : GameElement.VictimNotChosen();
             await NightChannel.SendMessageAsync(nightMessage);
+            await LockChannelForUsers(NightChannel, ActiveGame.Informed.Select(p => p.User));
+        }
+
+        class PlayerOption
+        {
+            public string Emote { get; set; }
+            public Player Player { get; set; }
         }
 
         public async Task StartVisionPhase()
         {
             var seer = ActiveGame.Investigator;
-            await DayChannel.SendMessageAsync("Taking the auspices.");
-            if (seer.Active)
+            await DayChannel.SendMessageAsync(GameElement.PhasePhrase(PhaseType.Investigation));
+            if (seer.Active || seer.User.Id == Phases.Last().Target.Id)
             {
-                await seer.User.SendMessageAsync("Investigate one of the players to see their role. Use command '$vision @someone' ");
+                await seer.User.SendMessageAsync(GameElement.PhaseInstruction(PhaseType.Investigation));
+                await SendInvestigationPoll(seer);
             }
+            else
+            {
+                await Task.Delay(TimeSpan.FromSeconds(10));
+                await CommandChannel.SendMessageAsync(GetCommandByPhaseType(PhaseType.Investigation));
+            }
+        }
+
+        private async Task SendInvestigationPoll(Player seer)
+        {
+            IEnumerable<Player> activePlayers = ActiveGame.Players
+                    .Where(p => (p.Active || p.User.Id == Phases.Last().Target.Id) && p.Role != GameRole.Investigator);
+
+            List<string> voteOptions = activePlayers
+                .Select(p => p.User.Username)
+                .ToList();
+
+            Poll investigationPoll = _poll.CreatePoll(GameElement.Poll.Investigate(), voteOptions, seer.User);
+            IUserMessage message = await seer.User.SendMessageAsync(string.Empty, false, investigationPoll.Message);
+
+            List<PlayerOption> options = investigationPoll.Emojis
+                .Zip(activePlayers, (emote, player) => new PlayerOption { Emote = emote, Player = player })
+                .ToList();
+
+            StartMonitoring(CreateOptionsMonitor(message.Id, options, MonitorType.Investigate));
         }
 
         public async Task ResolveVisionPhase(IUser targetUser)
@@ -190,47 +241,50 @@ namespace DiscordBot.Game.Mafia
             if (targetUser != null)
             {
                 Player targetPlayer = ActiveGame.Players.FirstOrDefault(p => p.User.Id == targetUser.Id);
-                await ActiveGame.Investigator.User.SendMessageAsync($"{targetPlayer.User.Username} is a {targetPlayer.Group}");
+                await ActiveGame.Investigator.User.SendMessageAsync(GameElement.SeenTheSigns(targetPlayer));
             }
             else
             {
-                await ActiveGame.Investigator.User.SendMessageAsync($"You lost your vision and missed a chance to check someones team.");
+                await ActiveGame.Investigator.User.SendMessageAsync(GameElement.NoSigns());
             }
         }
 
         public async Task StartDayPhase()
         {
             var lastNightVictim = Phases.LastOrDefault(p => p.Phase == PhaseType.Night)?.Target;
+            await DayChannel.SendMessageAsync(GameElement.PhasePhrase(PhaseType.Day));
+            string dayMessage = lastNightVictim != null
+                    ? GameElement.MurderScene(lastNightVictim.Username)
+                    : GameElement.NoMurder();
 
-            if(ActiveGame.Uninformed.Count(v => v.Active) == ActiveGame.Informed.Count(w => w.Active))
+            await DayChannel.SendMessageAsync(dayMessage);
+
+            /* TODO RETURN IN PROD if (ActiveGame.Uninformed.Count(v => v.Active) == ActiveGame.Informed.Count(w => w.Active))
             {
                 await EndGameWithWinner(GroupType.Informed);
             }
             else
-            {
+            {*/
+                await DayChannel.SendMessageAsync(GameElement.PhaseInstruction(PhaseType.Day));
                 await UnlockChannelForUsers(DayChannel, ActiveGame.Players.Where(p => p.Active).Select(p => p.User));
-                string dayMessage = lastNightVictim != null
-                    ? $"Day is starting. Last night {lastNightVictim.Username} died. Some extra message on the first day."
-                    : "Day is starting. Everybody stayed alive last night.";
-                await DayChannel.SendMessageAsync(dayMessage);
-            }
         }
 
         public async Task ResolveDayPhase(IUser userToRemove)
         {
             ResolvePhase(userToRemove, PhaseType.Day);
-            await LockChannelForUsers(DayChannel, ActiveGame.Players.Select(p => p.User));
             string dayMessage = userToRemove != null
-                ? $"{userToRemove.Username} was excommunicated."
-                : "Day is ending and everybody stays.";
+                ? GameElement.PlayerRemoved(userToRemove.Username)
+                : GameElement.NoPlayerRemoved();
             await DayChannel.SendMessageAsync(dayMessage);
+
+            await LockChannelForUsers(DayChannel, ActiveGame.Players.Select(p => p.User));
         }
 
         public async Task StartNightPhase()
         {
             var userToRemove = Phases.LastOrDefault(p => p.Phase == PhaseType.Day)?.Target;
 
-            if (ActiveGame.Informed.Count(w => w.Active) == 0)
+            /* TODO RETURN IN PROD if (ActiveGame.Informed.Count(w => w.Active) == 0)
             {
                 await EndGameWithWinner(GroupType.Uninformed);
             }
@@ -239,24 +293,25 @@ namespace DiscordBot.Game.Mafia
                 await EndGameWithWinner(GroupType.Informed);
             }
             else
-            {
+            {*/
+                await DayChannel.SendMessageAsync(GameElement.PhasePhrase(PhaseType.Night));
+                await NightChannel.SendMessageAsync(GameElement.PhaseInstruction(PhaseType.Night));
                 await UnlockChannelForUsers(NightChannel, ActiveGame.Informed.Where(p => p.Active).Select(p => p.User));
-                string nightMessage = userToRemove != null
-                    ? $"{userToRemove.Username} was excommunicated today. IT WAS ONE OF YOU OR NOT"
-                    : "No one was excommunicated today.";
-                await NightChannel.SendMessageAsync(nightMessage);
-            }
         }
         
-        public async Task StartSacrificePoll(IUser target)
+        public async Task StartSacrificePoll(IUser target, IUser author)
         {
-            IUserMessage killMessage = await NightChannel.SendMessageAsync("We should kill this player.");
-            StartMonitoring(CreateMonitor(killMessage.Id, target, MonitorType.Kill));
+            Poll killPoll = _poll.CreatePoll(GameElement.Poll.Kill(target.Username), new List<string>(), author);
+            IUserMessage message = await NightChannel.SendMessageAsync(string.Empty, false, killPoll.Message);
+            await message.AddReactionsAsync(killPoll.Emojis.Select(e => new Emoji(e)).ToArray());
+            StartMonitoring(CreateMonitor(message.Id, target, MonitorType.Kill));
         }
 
-        public async Task StartExcommunicatePoll(IUser target)
+        public async Task StartExcommunicatePoll(IUser target, IUser author)
         {
-            IUserMessage message = await NightChannel.SendMessageAsync("We should remove this player.");
+            Poll kickPoll = _poll.CreatePoll(GameElement.Poll.Kick(target.Username), new List<string>(), author);
+            IUserMessage message = await DayChannel.SendMessageAsync(string.Empty, false, kickPoll.Message);
+            await message.AddReactionsAsync(kickPoll.Emojis.Select(e => new Emoji(e)).ToArray());
             StartMonitoring(CreateMonitor(message.Id, target, MonitorType.Kick));
         }
 
@@ -287,6 +342,26 @@ namespace DiscordBot.Game.Mafia
 
         #region Phases
 
+        private string GetCommandByPhaseType(PhaseType phase)
+        {
+            if (phase == PhaseType.Day)
+            {
+                return "$remove";
+            }
+            else if (phase == PhaseType.Night)
+            {
+                return "$kill";
+            }
+            else if (phase == PhaseType.Investigation)
+            {
+                return "$signs";
+            }
+            else
+            {
+                throw new NotImplementedException($"{nameof(phase)} : {phase}");
+            }
+        }
+
         public async Task StartPhaseCounter(PhaseType phase)
         {
             int currentPhaseCount = Phases.Count;
@@ -297,22 +372,7 @@ namespace DiscordBot.Game.Mafia
             // Execute only we stay on the same phase after the phase counter 
             if (currentPhaseCount == Phases.Count)
             {
-                if (phase == PhaseType.Day)
-                {
-                    await CommandChannel.SendMessageAsync("$remove");
-                }
-                else if (phase == PhaseType.Night)
-                {
-                    await CommandChannel.SendMessageAsync("$kill");
-                }
-                else if (phase == PhaseType.Investigation)
-                {
-                    await CommandChannel.SendMessageAsync("$vision");
-                }
-                else
-                {
-                    throw new NotImplementedException($"{nameof(phase)} : {phase}");
-                }
+                await CommandChannel.SendMessageAsync(GetCommandByPhaseType(phase));
             }
         }
 
@@ -353,12 +413,35 @@ namespace DiscordBot.Game.Mafia
             {
                 case MonitorType.Ready: command = "$start"; break;
                 case MonitorType.Kill: command = $"$kill {Mention.Of(user.Id)}"; break;
-                case MonitorType.Kick: command = $"kick {Mention.Of(user.Id)}"; break;
+                case MonitorType.Kick: command = $"$kick {Mention.Of(user.Id)}"; break;
+                case MonitorType.Investigate: command = $"$signs {Mention.Of(user.Id)}"; break;
                 default:
                     throw new NotImplementedException($"{nameof(type)} : {type}");
             }
             return command;
-        } 
+        }
+
+        Func<Cacheable<IUserMessage, ulong>, ISocketMessageChannel, SocketReaction, Task>
+        CreateOptionsMonitor(ulong messageId, List<PlayerOption> options, MonitorType monitorType, int voteCount = 1)
+        {
+            return async (Cacheable<IUserMessage, ulong> userMessageProvider, ISocketMessageChannel channel, SocketReaction reaction) =>
+            {
+                if (reaction.MessageId == messageId)
+                {
+                    IUserMessage message = await userMessageProvider.GetOrDownloadAsync();
+                    int playerCount = voteCount + 1;
+                    ReactionSummary reactionSummary = message.Reactions
+                        .Select(r => new ReactionSummary(r.Key.Name, r.Value.ReactionCount))
+                        .FirstOrDefault(r => r.Count == playerCount);
+
+                    if (reactionSummary != null)
+                    {
+                        PlayerOption pickedOption = options.FirstOrDefault(o => o.Emote == reactionSummary.Name);
+                        await CommandChannel.SendMessageAsync(CommandByMonitorType(pickedOption.Player.User, monitorType));
+                    }
+                }
+            };
+        }
 
         Func<Cacheable<IUserMessage, ulong>, ISocketMessageChannel, SocketReaction, Task>
         CreateMonitor(ulong messageId, IUser targetUser, MonitorType monitorType)
@@ -371,7 +454,7 @@ namespace DiscordBot.Game.Mafia
                     int playerCount = GetPlayerCountByMonitorType(monitorType) + 1;
                     ReactionSummary reactionSummary = message.Reactions
                         .Select(r => new ReactionSummary(r.Key.Name, r.Value.ReactionCount))
-                        .FirstOrDefault(r => r.Name == "yes" && r.Count == playerCount);
+                        .FirstOrDefault(r => r.Name == YES && r.Count == playerCount);
 
                     if (reactionSummary != null)
                     {
@@ -448,10 +531,10 @@ namespace DiscordBot.Game.Mafia
                     sendTTSMessages: PermValue.Allow);
         }
 
-        private async Task<RestTextChannel> CreatePrivateGroupTextChannel(SocketGuild guild, string name, IEnumerable<IUser> users)
+        private async Task<RestTextChannel> CreatePrivateGroupTextChannel(SocketGuild guild, string name, IEnumerable<IUser> users, string description)
         {
             var everyoneRole = guild.Roles.FirstOrDefault(r => r.Name == "@everyone");
-            RestTextChannel channel = await guild.CreateTextChannelAsync(name);
+            RestTextChannel channel = await guild.CreateTextChannelAsync(name, (properties) => { properties.Topic = description; });
             await channel.AddPermissionOverwriteAsync(everyoneRole, OverwritePermissions.DenyAll(channel));
             await Task.WhenAll(users.Select(user =>
             {
@@ -463,13 +546,13 @@ namespace DiscordBot.Game.Mafia
 
         #region Coins
 
-        class PlayerReward
+        public class PlayerReward
         {
             public Player Player { get; set; }
             public int Reward { get; set; }
         }
 
-        private async Task RewardPlayers()
+        private async Task<List<PlayerReward>> RewardPlayers()
         {
             List<PlayerReward> rewards = GetPlayerRewards(Phases.ToList(), ActiveGame.Players);
             await Task.WhenAll(rewards.Select(r =>
@@ -477,6 +560,7 @@ namespace DiscordBot.Game.Mafia
                 return _coin.AddFunds(r.Player.User.Id, r.Reward);
             }));
             await _coin.SaveAsync();
+            return rewards;
         }
 
         private List<PlayerReward> GetPlayerRewards(ICollection<GamePhase> phases, ICollection<Player> players)

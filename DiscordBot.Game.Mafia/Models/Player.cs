@@ -25,6 +25,7 @@ namespace DiscordBot.Game.Mafia.Models
             User = user;
             Group = group;
             Role = role;
+            Active = true;
         }
         public IUser User { get; set; }
         public GroupType Group { get; set; }

@@ -11,7 +11,8 @@ namespace DiscordBot.Game.Mafia.Models
     {
         Kick,
         Kill,
-        Ready
+        Ready,
+        Investigate
     }
 
     public class VoteMonitor

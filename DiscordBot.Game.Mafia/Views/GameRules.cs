@@ -21,9 +21,9 @@ namespace DiscordBot.Game.Mafia.Views
             IEnumerable<string> gameFlowDescription = new[]
             {
                 "Everybody confirm they are ready for game to start",
-                "Game starts with the night phase.",
+                "They are privately notified of their role and game starts with the night phase.",
                 $"Cultists have ten minutes to pick their target by executing '$excommunicate @moderate' command and placing their vote unanimously. This command can be only be executed at night in {GameElement.Channel.Private()} channel.",
-                $"Once cultists have made their pick, augur has four minutes to pick a player by executing '$signs @player' command as a private message to the AttarcoinBot to keep his pick private.",
+                $"Once cultists have made their pick, augur has four minutes to pick a player in the vote poll sent by the bot to their private message.",
                 $"After augur learns with whom, player he has picked, is affiliated, cult's victim is revelead to the {GameElement.Channel.Public()} channel and day phase begins.",
                 $"Everyone introduces themselfs and discussion ensues among the living players.",
                 $"At any point during this phase, a player may accuse someone of being a cultist and prompt others to vote to eliminate them by executing '$excommunicate @player' in the {GameElement.Channel.Public()} channel.",
@@ -33,30 +33,30 @@ namespace DiscordBot.Game.Mafia.Views
 
             IEnumerable<string> rewardDescriptions = new[]
             {
-                $"{PriceConfiguration.CoinsPerLivedRound} coins per round you're alive for all roles",
-                $"{PriceConfiguration.CoinsPerKickOfInformedMember} coins per cultist excommunication for moderates",
-                $"{PriceConfiguration.CoinsPerKill} coins per sacrifice for cultists",
-                $"{PriceConfiguration.InvestigatorKillMultiplayer} augur sacrifice coin multiplier for cultists",
+                $"{PriceConfiguration.CoinsPerLivedRound} coins per round you're alive for",
+                $"{PriceConfiguration.CoinsPerKickOfInformedMember} coins per cultist excommunication for each moderate",
+                $"{PriceConfiguration.CoinsPerKill} coins per sacrifice for each cultist",
+                $"{PriceConfiguration.InvestigatorKillMultiplayer} augur sacrifice coin multiplier",
                 "You're eligable for coins if you were alive at the point an event happend.",
                 $"* to play you must have at least {PriceConfiguration.CostOfEntry} coins to pay the broker."
             };
             
             Embed general = new EmbedBuilder()
                 .WithTitle($"🏛    M O D E R A T E S    V S    C U L T I S T S    🏚️")
-                .WithDescription(string.Join("\n", generalDescription))
+                .WithDescription(string.Join("\n\n", generalDescription))
                 .WithColor(Color.DarkRed)
                 .Build();
 
             Embed gameFlow = new EmbedBuilder()
                 .WithTitle($"🏛    G A M E    F L O W    🏚️")
-                .WithDescription(string.Join("\n", gameFlowDescription))
+                .WithDescription(string.Join("\n\n", gameFlowDescription))
                 .WithFooter($"Group voice chat is encouraged. Otherwise, refrain from talking to players outside of {GameElement.Channel.Public()} and {GameElement.Channel.Private()} channels during the game.")
                 .WithColor(Color.DarkRed)
                 .Build();
 
             Embed rewards = new EmbedBuilder()
                 .WithTitle($"🏛    C O I N    B R E A K D O W N    🏚️")
-                .WithDescription(string.Join("\n", rewardDescriptions))
+                .WithDescription(string.Join("\n\n", rewardDescriptions))
                 .WithColor(Color.DarkRed)
                 .Build();
 

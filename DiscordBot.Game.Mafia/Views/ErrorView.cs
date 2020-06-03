@@ -7,10 +7,10 @@ namespace DiscordBot.Game.Mafia.Views
     public static class ErrorView
     {
         public static string MultipleGames() => 
-            "There could be only one active game the a time. Wait until the active group finishes to initiate a game. " +
+            "There could be only one initiated game at a time. Wait until the active group finishes to initiate a game. " +
             "Message 'JJ 3maj' if you find yourself waiting for your time to play too often.";
 
-        public static string NotFound() => "Game you requested doesn't exist.";
+        public static string NotFound() => "Game not found.";
 
         public static string GameExpired(int expiration) =>
             $"More than {expiration} minutes have passed since game was initiated. Initiate again.";
@@ -29,7 +29,10 @@ namespace DiscordBot.Game.Mafia.Views
             $"{username} was already successfully sacrificed.";
 
         public static string NotEnoughFunds() => 
-            $"You need atleast {PriceConfiguration.CostOfEntry} coins to create/join this game."; 
+            $"You need atleast {PriceConfiguration.CostOfEntry} coins to create/join this game.";
+
+        public static string AlreadyInLobby() =>
+            "You are already in the game lobby.";
     }
 
     public static class InfoView
@@ -41,5 +44,7 @@ namespace DiscordBot.Game.Mafia.Views
         public static string LeftLobby() => "You left the game lobby.";
 
         public static string LobbyStatus(int usersInLobby) => $"{usersInLobby}/8 users in lobby.";
+
+        public static string GameStarting() => "Game lobby is full and game creation is in progress...";
     }
 }
