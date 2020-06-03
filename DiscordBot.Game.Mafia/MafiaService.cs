@@ -231,8 +231,8 @@ namespace DiscordBot.Game.Mafia
             List<PlayerOption> options = investigationPoll.Emojis
                 .Zip(activePlayers, (emote, player) => new PlayerOption { Emote = emote, Player = player })
                 .ToList();
-
             StartMonitoring(CreateOptionsMonitor(message.Id, options, MonitorType.Investigate));
+            await message.AddReactionsAsync(investigationPoll.Emojis.Select(e => new Emoji(e)).ToArray());
         }
 
         public async Task ResolveVisionPhase(IUser targetUser)
@@ -501,18 +501,30 @@ namespace DiscordBot.Game.Mafia
 
         private async Task LockChannelForUsers(RestTextChannel channel, IEnumerable<IUser> users)
         {
+            OverwritePermissions perms = BasicViewChannelPerms(channel);
             await Task.WhenAll(users.Select(user =>
             {
-                return channel.AddPermissionOverwriteAsync(user, BasicViewChannelPerms(channel));
+                return channel.AddPermissionOverwriteAsync(user, perms);
             }));
+            IEnumerable<IUser> brokenUsers = UsersWithIncorrectPermissions(perms, channel.Id, users);
+            if (brokenUsers.Any())
+            {
+                await LockChannelForUsers(channel, brokenUsers);
+            }
         }
 
         private async Task UnlockChannelForUsers(RestTextChannel channel, IEnumerable<IUser> users)
         {
+            OverwritePermissions perms = InteractChannelPerms(channel);
             await Task.WhenAll(users.Select(user =>
             {
-                return channel.AddPermissionOverwriteAsync(user, InteractChannelPerms(channel));
+                return channel.AddPermissionOverwriteAsync(user, perms);
             }));
+            IEnumerable<IUser> brokenUsers = UsersWithIncorrectPermissions(perms, channel.Id, users);
+            if(brokenUsers.Any())
+            {
+                await UnlockChannelForUsers(channel, brokenUsers);
+            }
         }
 
         private OverwritePermissions BasicViewChannelPerms(RestTextChannel channel)
@@ -536,12 +548,92 @@ namespace DiscordBot.Game.Mafia
             var everyoneRole = guild.Roles.FirstOrDefault(r => r.Name == "@everyone");
             RestTextChannel channel = await guild.CreateTextChannelAsync(name, (properties) => { properties.Topic = description; });
             await channel.AddPermissionOverwriteAsync(everyoneRole, OverwritePermissions.DenyAll(channel));
-            await Task.WhenAll(users.Select(user =>
-            {
-                return channel.AddPermissionOverwriteAsync(user, OverwritePermissions.DenyAll(channel));
-            }));
             return channel;
         }
+
+        private RestTextChannel ChannelByGroupType(GroupType group)
+        {
+            return group == GroupType.Informed
+                ? NightChannel
+                : DayChannel;
+        }
+        
+        private bool ArePermissionsEqual(OverwritePermissions a, OverwritePermissions b)
+        {
+            var bList = b.ToAllowList();
+            return a.ToAllowList().All(permA => bList.Contains(permA));
+        }
+
+        private IEnumerable<IUser> UsersWithIncorrectPermissions(
+            OverwritePermissions correctPerms, 
+            ulong channelId, 
+            IEnumerable<IUser> users)
+        {
+            var channel = _client.Guilds.SelectMany(g => g.TextChannels).FirstOrDefault(c => c.Id == channelId);
+            return users.Where(user =>
+            {
+                if (!channel.PermissionOverwrites.Any(overwrite => overwrite.TargetId == user.Id))
+                    return true;
+                Overwrite playerOverwrite = channel.PermissionOverwrites.First(overwrite => overwrite.TargetId == user.Id);
+                return !ArePermissionsEqual(playerOverwrite.Permissions, correctPerms);
+            });
+        }
+
+        /*private OverwritePermissions GetPermissionsByPhaseAndChannel(PhaseType phase, RestTextChannel channel, GroupType group)
+        {
+            if(channel.Name == GameElement.Channel.Public())
+            {
+                if(phase == PhaseType.Day)
+                {
+                    return InteractChannelPerms(channel);
+                }
+                else
+                {
+                    return BasicViewChannelPerms(channel);
+                }
+            }
+            else if(channel.Name == GameElement.Channel.Private())
+            {
+                if(phase == PhaseType.Night && group == GroupType.Informed)
+                {
+                    return InteractChannelPerms(channel);
+                }
+                else
+                {
+                    return BasicViewChannelPerms(channel);
+                }
+            }
+            else
+            {
+                throw new NotImplementedException(channel.Name);
+            }
+        }*/
+
+        /*private async Task FixPlayersPermissions(List<Player> players)
+        {
+            PhaseType phase = CurrentPhase();
+            List<Player> playersWithWrongPermissions = players.Where(player =>
+            {
+                RestTextChannel channel = ChannelByGroupType(player.Group);
+                return channel.PermissionOverwrites.Any(perm =>
+                {
+                    OverwritePermissions rightPerms = GetPermissionsByPhaseAndChannel(phase, channel, player.Group);
+                    return perm.TargetId == player.User.Id && !ArePermissionsEqual(perm.Permissions, rightPerms);
+                });
+            }).ToList();
+
+            if(playersWithWrongPermissions.Count > 0)
+            {
+                await Task.WhenAll(playersWithWrongPermissions.Select(player =>
+                {
+                    RestTextChannel channel = ChannelByGroupType(player.Group);
+                    OverwritePermissions rightPerms = GetPermissionsByPhaseAndChannel(phase, channel, player.Group);
+                    return channel.AddPermissionOverwriteAsync(player.User, rightPerms);
+                }));
+                await FixPlayersPermissions(players);
+            }
+        }*/
+
         #endregion
 
         #region Coins
