@@ -62,19 +62,16 @@ namespace DiscordBot.Game.Mafia
             DayChannel = await CreatePrivateGroupTextChannel(
                 guild,
                 GameElement.Channel.Public(),
-                ActiveGame.Players.Select(p => p.User),
                 GameElement.ChannelDescription.Public());
 
             NightChannel = await CreatePrivateGroupTextChannel(
                 guild,
                 GameElement.Channel.Private(),
-                ActiveGame.Players.Select(p => p.User),
                 GameElement.ChannelDescription.Private(ActiveGame.Uninformed.ToList()));
 
             CommandChannel = await CreatePrivateGroupTextChannel(
                 guild,
                 GameElement.Channel.Command(),
-                new[] { _client.CurrentUser },
                 string.Empty);
 
             GameChannels = new List<GameChannel>(new[]
@@ -103,7 +100,7 @@ namespace DiscordBot.Game.Mafia
 
         private async Task EndGameWithWinner(GroupType winningGroup)
         {
-            var players = await RewardPlayers();
+            List<PlayerReward> players = await RewardPlayers();
             await DayChannel.SendMessageAsync(GameEndView.Message(winningGroup));
             await DayChannel.SendMessageAsync(string.Empty, false, GameEndView.Of(winningGroup, players));
             await Dispose();
@@ -166,15 +163,25 @@ namespace DiscordBot.Game.Mafia
 
         #region Game loop
 
+        public bool InformedGroupWins()
+        {
+            return ActiveGame.Informed.Count(w => w.Active) >= ActiveGame.Uninformed.Count(v => v.Active);
+        }
+
+        public bool UninformedGroupWins()
+        {
+            return ActiveGame.Informed.All(w => !w.Active);
+        }
+
         // circular: night -> visions -> day -> night
         
         public async Task StartGame()
         {
-            // TODO RETURN IN PROD await ChargeCostOfEntry();
+            await ChargeCostOfEntry();
             RemoveMonitors();
             await Task.WhenAll(ActiveGame.Players.Select(p =>
             {
-                return p.User.SendMessageAsync($"Your role is {GameElement.Role(p.Role)}.");
+                return p.User.SendMessageAsync(GameElement.InitialRoleReveal(p.Role));
             }));
 
             await DayChannel.SendMessageAsync(GameElement.PhasePhrase(PhaseType.Night));
@@ -238,14 +245,18 @@ namespace DiscordBot.Game.Mafia
         public async Task ResolveVisionPhase(IUser targetUser)
         {
             ResolvePhase(targetUser, PhaseType.Investigation);
-            if (targetUser != null)
+            Player investigator = ActiveGame.Investigator;
+            if (investigator.Active)
             {
-                Player targetPlayer = ActiveGame.Players.FirstOrDefault(p => p.User.Id == targetUser.Id);
-                await ActiveGame.Investigator.User.SendMessageAsync(GameElement.SeenTheSigns(targetPlayer));
-            }
-            else
-            {
-                await ActiveGame.Investigator.User.SendMessageAsync(GameElement.NoSigns());
+                if (targetUser != null)
+                {
+                    Player targetPlayer = ActiveGame.Players.FirstOrDefault(p => p.User.Id == targetUser.Id);
+                    await investigator.User.SendMessageAsync(GameElement.SeenTheSigns(targetPlayer));
+                }
+                else
+                {
+                    await investigator.User.SendMessageAsync(GameElement.NoSigns());
+                }
             }
         }
 
@@ -259,14 +270,15 @@ namespace DiscordBot.Game.Mafia
 
             await DayChannel.SendMessageAsync(dayMessage);
 
-            /* TODO RETURN IN PROD if (ActiveGame.Uninformed.Count(v => v.Active) == ActiveGame.Informed.Count(w => w.Active))
+            if(InformedGroupWins())
             {
                 await EndGameWithWinner(GroupType.Informed);
             }
             else
-            {*/
+            {
                 await DayChannel.SendMessageAsync(GameElement.PhaseInstruction(PhaseType.Day));
                 await UnlockChannelForUsers(DayChannel, ActiveGame.Players.Where(p => p.Active).Select(p => p.User));
+            }
         }
 
         public async Task ResolveDayPhase(IUser userToRemove)
@@ -284,19 +296,20 @@ namespace DiscordBot.Game.Mafia
         {
             var userToRemove = Phases.LastOrDefault(p => p.Phase == PhaseType.Day)?.Target;
 
-            /* TODO RETURN IN PROD if (ActiveGame.Informed.Count(w => w.Active) == 0)
+            if (UninformedGroupWins())
             {
                 await EndGameWithWinner(GroupType.Uninformed);
             }
-            else if(ActiveGame.Uninformed.Count(v => v.Active) == ActiveGame.Informed.Count(w => w.Active))
+            else if (InformedGroupWins())
             {
                 await EndGameWithWinner(GroupType.Informed);
             }
             else
-            {*/
+            {
                 await DayChannel.SendMessageAsync(GameElement.PhasePhrase(PhaseType.Night));
                 await NightChannel.SendMessageAsync(GameElement.PhaseInstruction(PhaseType.Night));
                 await UnlockChannelForUsers(NightChannel, ActiveGame.Informed.Where(p => p.Active).Select(p => p.User));
+            }
         }
         
         public async Task StartSacrificePoll(IUser target, IUser author)
@@ -543,7 +556,7 @@ namespace DiscordBot.Game.Mafia
                     sendTTSMessages: PermValue.Allow);
         }
 
-        private async Task<RestTextChannel> CreatePrivateGroupTextChannel(SocketGuild guild, string name, IEnumerable<IUser> users, string description)
+        private async Task<RestTextChannel> CreatePrivateGroupTextChannel(SocketGuild guild, string name, string description)
         {
             var everyoneRole = guild.Roles.FirstOrDefault(r => r.Name == "@everyone");
             RestTextChannel channel = await guild.CreateTextChannelAsync(name, (properties) => { properties.Topic = description; });
@@ -569,10 +582,10 @@ namespace DiscordBot.Game.Mafia
             ulong channelId, 
             IEnumerable<IUser> users)
         {
-            var channel = _client.Guilds.SelectMany(g => g.TextChannels).FirstOrDefault(c => c.Id == channelId);
+            SocketTextChannel channel = _client.Guilds.SelectMany(g => g.TextChannels).FirstOrDefault(c => c.Id == channelId);
             return users.Where(user =>
             {
-                if (!channel.PermissionOverwrites.Any(overwrite => overwrite.TargetId == user.Id))
+                if (channel.PermissionOverwrites.All(overwrite => overwrite.TargetId != user.Id))
                     return true;
                 Overwrite playerOverwrite = channel.PermissionOverwrites.First(overwrite => overwrite.TargetId == user.Id);
                 return !ArePermissionsEqual(playerOverwrite.Permissions, correctPerms);
@@ -706,7 +719,6 @@ namespace DiscordBot.Game.Mafia
 
         private async Task ChargeCostOfEntry()
         {
-            // TODO Implement coin transfer
             await Task.WhenAll(ActiveGame.Players.Select(p =>
             {
                 return _coin.RemoveFunds(p.User.Id, PriceConfiguration.CostOfEntry);

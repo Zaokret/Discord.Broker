@@ -10,7 +10,7 @@ namespace DiscordBot.Game.Mafia.Views
 {
     public static class GameElement
     {
-        public static string Name = "Divide";
+        public static string GameName = "Moderates vs Cultists";
 
         public static class Channel
         {
@@ -51,6 +51,9 @@ namespace DiscordBot.Game.Mafia.Views
 
         public static string NoPlayerRemoved()
             => "Indecisiveness will certainly cost you your lives. Chaos rules in the senate.";
+
+        public static string InitialRoleReveal(GameRole role)
+            => $"Your role is {GameElement.Role(role)}.";
 
         public static string Phase(PhaseType phase)
         {

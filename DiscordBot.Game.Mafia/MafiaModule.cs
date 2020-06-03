@@ -38,10 +38,10 @@ namespace DiscordBot.Game.Mafia
         [Summary("Creates a pending warewolf game.")]
         public async Task CreatePendingGame()
         {
-            /* TODO RETURN IN PROD if(!(await CanPayCostOfEntry(Context.User.Id)))
+            if(!(await CanPayCostOfEntry(Context.User.Id)))
             {
                 await ReplyAsync(ErrorView.NotEnoughFunds());
-            }*/
+            }
             if(PendingGameService.PendingGames.Any())
             {
                 await ReplyAsync(ErrorView.MultipleGames());
@@ -58,21 +58,14 @@ namespace DiscordBot.Game.Mafia
         [Summary("Joins a pending warewolf game and initialises when the last player joins.")]
         public async Task JoinPendingGame()
         {
-            // TODO VALIDATE AGAINST DOUBLE JOINS
-            /*TODO RETURN IN PROD if (!(await CanPayCostOfEntry(Context.User.Id)))
+            if (!(await CanPayCostOfEntry(Context.User.Id)))
             {
                 await ReplyAsync(ErrorView.NotEnoughFunds());
-            }*/
+            }
             if (PendingGameService.PendingGames.Count == 0)
             {
                 await ReplyAsync(ErrorView.NotFound());
             }
-            /* TODO BUGFIX else if(PendingGameService.PendingGames.Any(g => g.Id == gameId && 
-                DateTime.Now.Subtract(g.CreatedAt).Minutes >= PendingGameService.ExpirationInMinutes))
-            {
-                PendingGameService.PendingGames.Remove(PendingGameService.PendingGames.FirstOrDefault(g => g.Id == gameId));
-                await ReplyAsync(ErrorView.GameExpired(PendingGameService.ExpirationInMinutes));
-            }*/
             else if(PendingGameService.PendingGames.Any(g => g.Users.Any(u => u.Id == Context.User.Id)))
             {
                 await ReplyAsync(ErrorView.AlreadyInLobby());
@@ -87,7 +80,7 @@ namespace DiscordBot.Game.Mafia
                 else
                 {
                     game.Users.Add(Context.User);
-                    if (game.Users.Count == 4) // TODO RETURN IN PROD 8
+                    if (game.Users.Count == GameConfiguration.NumberOfPlayers)
                     {
                         game.Active = true;
                         await ReplyAsync(InfoView.GameStarting());
