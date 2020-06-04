@@ -19,6 +19,7 @@ namespace DiscordBot
             CommandPrefix = jsonConfig.CommandPrefix;
             Token = token;
         }
+        public ulong BotAuthor = 563437347899965455;
         public string Token { get; set; }
     }
 }

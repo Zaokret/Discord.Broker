@@ -36,6 +36,11 @@ namespace DiscordBot.Broker
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         }
 
+        public async Task<int> GetFundsByUserId(ulong userId)
+        {
+            return (int)(await _repository.GetCoinsByUserIdAsync(userId));
+        }
+
         private async Task<RankedUser> GetRankedUser(UserEntity entity, int rank, List<SocketGuildUser> users)
         {
             SocketGuildUser guildUser = users.FirstOrDefault(u => u.Id == entity.UserId);
@@ -103,7 +108,6 @@ namespace DiscordBot.Broker
                 Wallet wallet = new Wallet(entity.Funds);
                 wallet.Deposit(funds);
                 await _repository.UpdateFundsAsync(userId, wallet.Funds);
-                await _repository.SaveAsync();
                 return wallet.Funds;
             }
             else
@@ -114,14 +118,8 @@ namespace DiscordBot.Broker
                     Funds = funds
                 };
                 await _repository.AddUserAsync(user);
-                await _repository.SaveAsync();
                 return funds;
             }
-        }
-
-        public async Task<float> AddCoin(ulong userId, Coin coin)
-        {
-            return await AddFunds(userId, coin.Value);
         }
 
         public async Task<float> RemoveFunds(ulong userId, float funds)
@@ -132,15 +130,24 @@ namespace DiscordBot.Broker
                 Wallet wallet = new Wallet(entity.Funds);
                 wallet.Widthdraw(funds);
                 await _repository.UpdateFundsAsync(userId, wallet.Funds);
-                await _repository.SaveAsync();
                 return wallet.Funds;
             }
             return 0;
         }
 
+        public async Task<float> AddCoin(ulong userId, Coin coin)
+        {
+            return await AddFunds(userId, coin.Value);
+        }
+
         public async Task<float> RemoveCoin(ulong userId, Coin coin)
         {
             return await RemoveFunds(userId, coin.Value);
+        }
+
+        public async Task SaveAsync()
+        {
+            await _repository.SaveAsync();
         }
     }
 }

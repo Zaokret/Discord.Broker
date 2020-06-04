@@ -13,6 +13,7 @@ using DiscordBot.Game.CoinWar.Extensions;
 using DiscordBot.Broker;
 using DiscordBot.Core.Models;
 using DiscordBot.Game.CoinWar.Exceptions;
+using DiscordBot.Core.Extensions;
 
 namespace DiscordBot.Game.CoinWar
 {
@@ -162,6 +163,7 @@ namespace DiscordBot.Game.CoinWar
             if (winner != null && game.Rounds.Count(r => r.WinnerTeamId == winner.TeamId) == game.RoundsToReward)
             {
                 await _coinService.AddFunds(winner.User.Id, (float)winner.Coins);
+                await _coinService.SaveAsync();
                 await SendEndOfGameMessage(game);
             }
             else

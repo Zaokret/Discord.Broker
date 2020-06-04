@@ -40,7 +40,7 @@ namespace DiscordBot.Services
                 throw new Exception("Please enter a valid bot's token.");
 
             await _discord.LoginAsync(TokenType.Bot, discordToken);     
-            await _discord.StartAsync();                                
+            await _discord.StartAsync();
 
             _commands.AddTypeReader<List<string>>(new ListOfStringTypeReader());
 
@@ -49,9 +49,6 @@ namespace DiscordBot.Services
                 await _commands.AddModuleAsync(typeof(CoinModule), _provider);
                 await _commands.AddModuleAsync(typeof(CoinWarModule), _provider);
                 await _commands.AddModuleAsync(typeof(PollModule), _provider);
-            }
-            else
-            {
                 await _commands.AddModuleAsync(typeof(MafiaModule), _provider);
             }
         }

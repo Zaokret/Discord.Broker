@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\DiscordBot.Broker\DiscordBot.Broker.csproj" />
     <ProjectReference Include="..\DiscordBot.Core\DiscordBot.Core.csproj" />
   </ItemGroup>
 

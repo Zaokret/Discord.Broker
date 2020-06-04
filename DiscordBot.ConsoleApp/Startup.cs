@@ -17,6 +17,7 @@ using Discord.Addons.Interactive;
 using DiscordBot.Game.CoinWar;
 using DiscordBot.Infrastructure.Repositories;
 using DiscordBot.ConsoleApp;
+using DiscordBot.Game.Mafia;
 
 namespace DiscordBot
 {
@@ -74,8 +75,10 @@ namespace DiscordBot
             .AddSingleton<ReactionController>()
             .AddSingleton<GameService>() // should this stay singleton ? 
             .AddSingleton<CollectablePickerService>()
+            .AddSingleton<MafiaService>()
             .AddScoped<CoinService>()
             .AddTransient<InteractiveService>()
+            .AddTransient<PollService>()
             .AddSingleton(Configuration);           
         }
   }

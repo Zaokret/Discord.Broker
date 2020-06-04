@@ -3,6 +3,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using DiscordBot.Broker;
 using DiscordBot.Contracts;
+using DiscordBot.Core.Attributes;
 using DiscordBot.Models;
 using System;
 using System.Collections.Generic;
@@ -41,7 +42,7 @@ namespace DiscordBot.Modules
                 await ReplyAsync(GetUserMessage(rounded, user.Username));
             }
         }
-
+        
         [Command("rich")]
         [Summary("Retreives coins for top 5 users in a leaderboard.")]
         public async Task GetLeaderboard()
@@ -85,6 +86,22 @@ namespace DiscordBot.Modules
         public async Task GetHelp()
         {
             await Context.Channel.SendFileAsync("./assets/guide-to-staying-relaxed.mp3");
+        }
+
+        [RequiredBotAuthor]
+        [Command("refund")]
+        public async Task RefundFunds(int funds, IUser user)
+        {
+            await _service.AddFunds(user.Id, funds);
+            await _service.SaveAsync();
+        }
+
+        [RequiredBotAuthor]
+        [Command("seize")]
+        public async Task SeizeFunds(int funds, IUser user)
+        {
+            await _service.RemoveFunds(user.Id, funds);
+            await _service.SaveAsync();
         }
 
         private string GetUserMessage(int coins, string username)
