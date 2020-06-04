@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DiscordBot.Game.Mafia.Attributes
+namespace DiscordBot.Core.Attributes
 {
     public class RequiredCurrentUserAttribute : PreconditionAttribute
     {
@@ -14,7 +14,7 @@ namespace DiscordBot.Game.Mafia.Attributes
         public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
         {
             var client = (DiscordSocketClient)services.GetService(typeof(DiscordSocketClient));
-            
+
             if (context.User.Id == client.CurrentUser.Id)
             {
                 return Task.FromResult(PreconditionResult.FromSuccess());

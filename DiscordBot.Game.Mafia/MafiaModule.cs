@@ -3,6 +3,7 @@ using Discord.Commands;
 using Discord.Rest;
 using Discord.WebSocket;
 using DiscordBot.Broker;
+using DiscordBot.Core.Attributes;
 using DiscordBot.Game.Mafia.Attributes;
 using DiscordBot.Game.Mafia.Models;
 using DiscordBot.Game.Mafia.Views;

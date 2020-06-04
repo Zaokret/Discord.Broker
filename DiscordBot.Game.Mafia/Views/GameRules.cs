@@ -33,11 +33,12 @@ namespace DiscordBot.Game.Mafia.Views
 
             IEnumerable<string> rewardDescriptions = new[]
             {
-                $"{PriceConfiguration.CoinsPerLivedRound} coins per round you're alive for",
+                $"{PriceConfiguration.CoinsPerLivedRound} coins per day you're alive for",
                 $"{PriceConfiguration.CoinsPerKickOfInformedMember} coins per cultist excommunication for each moderate",
                 $"{PriceConfiguration.CoinsPerKill} coins per sacrifice for each cultist",
                 $"{PriceConfiguration.InvestigatorKillMultiplayer} augur sacrifice coin multiplier",
-                "You're eligable for coins if you were alive at the point an event happend.",
+                $"{PriceConfiguration.CoinsForSurvival} coins for being alive at the end of the game",
+                $"{PriceConfiguration.WinCoinMultiplier} coin multiplier for wining",
                 $"* to play you must have at least {PriceConfiguration.CostOfEntry} coins to pay the broker."
             };
             

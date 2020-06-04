@@ -40,7 +40,7 @@ namespace DiscordBot.Services
                 throw new Exception("Please enter a valid bot's token.");
 
             await _discord.LoginAsync(TokenType.Bot, discordToken);     
-            await _discord.StartAsync();                                
+            await _discord.StartAsync();
 
             _commands.AddTypeReader<List<string>>(new ListOfStringTypeReader());
 

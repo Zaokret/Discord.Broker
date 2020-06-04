@@ -10,14 +10,38 @@ namespace DiscordBot.Game.Mafia.Views
 {
     public static class GameEndView
     {
+        private static string IsAlive(bool alive)
+        {
+            return alive ? "yes" : "no";
+        }
+
+        public static EmbedFieldBuilder PlayerScore(PlayerReward obj)
+        {
+            string description = string.Join("\n", new string[]
+            {
+                string.Empty,
+                $"Role: {GameElement.Role(obj.Player.Role)}",
+                $"Alive: {IsAlive(obj.Player.Active)}",
+                $"Alive for: {obj.DaysAliveFor} days",
+                $"Reward: {obj.Reward} coins"
+            });
+            return new EmbedFieldBuilder()
+                .WithIsInline(true)
+                .WithName(obj.Player.User.Username)
+                .WithValue(description);
+        }
+
         public static Embed Of(GroupType group, List<PlayerReward> rewardedPlayers)
         {
-            string description = 
-                string.Join("\n\n", rewardedPlayers.Select(r => $"{r.Player.User.Username} ({GameElement.Role(r.Player.Role)}) earned {r.Reward} coins."));
+            EmbedFieldBuilder[] playerScore = rewardedPlayers
+                .OrderByDescending(s => s.Reward)
+                .Select(PlayerScore)
+                .ToArray();
 
             return new EmbedBuilder()
-                .WithTitle($"{GameElement.Group(group)} WIN")
-                .WithDescription(description)
+                .WithTitle("S C O R E B O A R D")
+                .WithDescription($"{GameElement.Group(group)} WIN")
+                .WithFields(playerScore)
                 .WithColor(Color.DarkRed)
                 .Build();
         }

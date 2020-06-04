@@ -84,10 +84,10 @@ namespace DiscordBot.Game.Mafia
 
         public async Task SendGameRules()
         {
-            await Task.WhenAll(GameRules.Of().Select(rule =>
+            foreach (Embed rule in GameRules.Of())
             {
-                return DayChannel.SendMessageAsync(string.Empty, false, rule);
-            }));
+                await DayChannel.SendMessageAsync(string.Empty, false, rule);
+            }
         }
 
         public async Task InitiateReadyPoll()
@@ -100,7 +100,7 @@ namespace DiscordBot.Game.Mafia
 
         private async Task EndGameWithWinner(GroupType winningGroup)
         {
-            List<PlayerReward> players = await RewardPlayers();
+            List<PlayerReward> players = await RewardPlayers(Phases.ToList(), winningGroup);
             await DayChannel.SendMessageAsync(GameEndView.Message(winningGroup));
             await DayChannel.SendMessageAsync(string.Empty, false, GameEndView.Of(winningGroup, players));
             await Dispose();
@@ -108,17 +108,20 @@ namespace DiscordBot.Game.Mafia
 
         private async Task Dispose()
         {
+            await UnlockChannelForUsers(DayChannel, ActiveGame.Players.Select(s => s.User));
+            await DayChannel.SendMessageAsync("Senate floor splits in two as an earthquake shakes the ground. All are permitted to chat until the senate is destroyed ( 10 minutes ).");
             RemoveMonitors();
             await Task.WhenAll(new[]
             {
                 CommandChannel.DeleteAsync(),
-                NightChannel.DeleteAsync(),
-                DayChannel.DeleteAsync()
+                NightChannel.DeleteAsync()
             });
             GameChannels.Clear();
             Phases.Clear();
-            ActiveGame = null;
             PendingGameService.PendingGames.Clear();
+            ActiveGame = null;
+            await Task.Delay(TimeSpan.FromMinutes(10));
+            await DayChannel.DeleteAsync();
         }
 
         #endregion
@@ -163,14 +166,14 @@ namespace DiscordBot.Game.Mafia
 
         #region Game loop
 
-        public bool InformedGroupWins()
+        public bool InformedGroupWins(GameObject game)
         {
-            return ActiveGame.Informed.Count(w => w.Active) >= ActiveGame.Uninformed.Count(v => v.Active);
+            return game.Informed.Count(w => w.Active) >= game.Uninformed.Count(v => v.Active);
         }
 
-        public bool UninformedGroupWins()
+        public bool UninformedGroupWins(GameObject game)
         {
-            return ActiveGame.Informed.All(w => !w.Active);
+            return game.Informed.All(w => !w.Active);
         }
 
         // circular: night -> visions -> day -> night
@@ -270,7 +273,7 @@ namespace DiscordBot.Game.Mafia
 
             await DayChannel.SendMessageAsync(dayMessage);
 
-            if(InformedGroupWins())
+            if(InformedGroupWins(ActiveGame))
             {
                 await EndGameWithWinner(GroupType.Informed);
             }
@@ -296,11 +299,11 @@ namespace DiscordBot.Game.Mafia
         {
             var userToRemove = Phases.LastOrDefault(p => p.Phase == PhaseType.Day)?.Target;
 
-            if (UninformedGroupWins())
+            if (UninformedGroupWins(ActiveGame))
             {
                 await EndGameWithWinner(GroupType.Uninformed);
             }
-            else if (InformedGroupWins())
+            else if (InformedGroupWins(ActiveGame))
             {
                 await EndGameWithWinner(GroupType.Informed);
             }
@@ -338,12 +341,13 @@ namespace DiscordBot.Game.Mafia
             Phases.Add(new GamePhase() { Target = target, Phase = phase });
         }
 
-        public void RemoveUserFromPlay(IUser user)
+        public void RemoveUserFromPlay(IUser user, GameObject game = null)
         {
-            Player victimPlayer = ActiveGame.Players.FirstOrDefault(p => p.User.Id == user.Id);
-            ActiveGame.Players.Remove(victimPlayer);
+            game = game ?? ActiveGame;
+            Player victimPlayer = game.Players.FirstOrDefault(p => p.User.Id == user.Id);
+            game.Players.Remove(victimPlayer);
             victimPlayer.Active = false;
-            ActiveGame.Players.Add(victimPlayer);
+            game.Players.Add(victimPlayer);
         }
         
         public async Task NotifyPlayerLeft(IUser user)
@@ -655,11 +659,12 @@ namespace DiscordBot.Game.Mafia
         {
             public Player Player { get; set; }
             public int Reward { get; set; }
+            public int DaysAliveFor { get; set; }
         }
 
-        private async Task<List<PlayerReward>> RewardPlayers()
+        private async Task<List<PlayerReward>> RewardPlayers(List<GamePhase> phases, GroupType winningGroup)
         {
-            List<PlayerReward> rewards = GetPlayerRewards(Phases.ToList(), ActiveGame.Players);
+            List<PlayerReward> rewards = GetPlayerRewards(ActiveGame, phases, ActiveGame.Players, winningGroup);
             await Task.WhenAll(rewards.Select(r =>
             {
                 return _coin.AddFunds(r.Player.User.Id, r.Reward);
@@ -668,10 +673,10 @@ namespace DiscordBot.Game.Mafia
             return rewards;
         }
 
-        private List<PlayerReward> GetPlayerRewards(ICollection<GamePhase> phases, ICollection<Player> players)
+        private List<PlayerReward> GetPlayerRewards(GameObject game, ICollection<GamePhase> phases, ICollection<Player> players, GroupType winningGroup)
         {
-            List<Player> informed = ActiveGame.Informed.ToList();
-            List<Player> uninformed = ActiveGame.Uninformed.ToList();
+            List<Player> informed = game.Informed.ToList();
+            List<Player> uninformed = game.Uninformed.ToList();
             List<GamePhase> dayAndNightPhases = phases
                 .Where(p => p.Phase == PhaseType.Day || p.Phase == PhaseType.Night)
                 .ToList();
@@ -681,20 +686,33 @@ namespace DiscordBot.Game.Mafia
                 int countOfAlivePhases = dayAndNightPhases
                     .FindIndex(phase => phase.Target != null && phase.Target.Id == player.User.Id);
 
+                if (countOfAlivePhases == -1)
+                {
+                    countOfAlivePhases = dayAndNightPhases.Count();
+                }
+
                 List<GamePhase> alivePhases = dayAndNightPhases
                     .Take(countOfAlivePhases)
                     .ToList();
 
-                int rewardForStayingAlive = alivePhases.Count * PriceConfiguration.CoinsPerLivedRound;
+                int daysAlive = (int)Math.Floor((alivePhases.Count / 2f));
+                int rewardForStayingAlive = daysAlive * PriceConfiguration.CoinsPerLivedRound;
 
                 int additionalReward = player.Group == GroupType.Informed
-                    ? GetUninformedPlayerReward(player, alivePhases, informed)
-                    : GetUninformedPlayerReward(player, alivePhases, uninformed);
+                    ? GetInformedPlayerReward(player, alivePhases, uninformed)
+                    : GetUninformedPlayerReward(player, alivePhases, informed);
 
+                int survivalBonus = player.Active ? PriceConfiguration.CoinsForSurvival : 0;
+
+                int coins = rewardForStayingAlive + additionalReward + survivalBonus;
+                float winMultiplier = player.Group == winningGroup ? PriceConfiguration.WinCoinMultiplier : 1;
+
+                int reward = (int)Math.Ceiling(winMultiplier * coins);
                 return new PlayerReward
                 {
                     Player = player,
-                    Reward = rewardForStayingAlive + additionalReward
+                    Reward = reward,
+                    DaysAliveFor = daysAlive
                 };
             }).ToList();
         }
@@ -705,15 +723,16 @@ namespace DiscordBot.Game.Mafia
             return count * PriceConfiguration.CoinsPerKickOfInformedMember;
         }
 
-        private float GetInformedPlayerReward(Player player, List<GamePhase> alivePhases, List<Player> uninformed)
+        private int GetInformedPlayerReward(Player player, List<GamePhase> alivePhases, List<Player> uninformed)
         {
-            Player investigator = ActiveGame.Investigator;
+            Player investigator = uninformed.FirstOrDefault(p => p.Role == GameRole.Investigator);
             return alivePhases
                 .Where(phase => phase.Target != null && uninformed.Any(i => i.User.Id == phase.Target.Id))
                 .Aggregate(0, (total, phase) =>
                 {
-                    int multiplier = investigator.User.Id == phase.Target.Id ? PriceConfiguration.InvestigatorKillMultiplayer : 1;
-                    return total + PriceConfiguration.CoinsPerKill * multiplier;
+                    float multiplier = investigator.User.Id == phase.Target.Id ? PriceConfiguration.InvestigatorKillMultiplayer : 1;
+                    int reward = (int)Math.Ceiling(PriceConfiguration.CoinsPerKill * multiplier);
+                    return total + reward;
                 });
         }
 
@@ -728,5 +747,32 @@ namespace DiscordBot.Game.Mafia
         }
 
         #endregion
+
+        #region Tests
+
+        public async Task PlayerRewardsTest()
+        {
+            IEnumerable<IUser> users = _client.Guilds.SelectMany(g => g.Users).Take(8);
+            GameObject game = new GameObject(users.ToList());
+            Random random = new Random(Guid.NewGuid().GetHashCode());
+            ICollection<GamePhase> gamePhases = new List<GamePhase>();
+            while (!InformedGroupWins(game) && !InformedGroupWins(game))
+            {
+                List<Player> activePlayers = game.Players.Where(p => p.Active).ToList();
+                Player playerToBeRemoved = activePlayers[random.Next(activePlayers.Count)];
+                RemoveUserFromPlay(playerToBeRemoved.User, game);
+                gamePhases.Add(new GamePhase
+                {
+                    Target = playerToBeRemoved.User,
+                    Phase = playerToBeRemoved.Group == GroupType.Informed ? PhaseType.Day : PhaseType.Night
+                });
+            }
+            GroupType winers = InformedGroupWins(game) ? GroupType.Informed : GroupType.Uninformed;
+            List<PlayerReward> rewards = GetPlayerRewards(game, gamePhases, game.Players.ToList(), winers);
+            IUser me = _client.Guilds.SelectMany(g => g.Users).FirstOrDefault(u => u.Username == "JJ 3maj");
+            await me.SendMessageAsync(string.Empty, false, GameEndView.Of(winers, rewards));
+        }
+
+        #endregion 
     }
 }
