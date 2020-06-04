@@ -35,8 +35,8 @@ namespace DiscordBot.Game.Mafia
             return coins >= PriceConfiguration.CostOfEntry;
         }
 
-        [Command("divide")]
-        [Summary("Creates a pending warewolf game.")]
+        [Command("occult")]
+        [Summary("Creates a game lobby with one player inside.")]
         public async Task CreatePendingGame()
         {
             if(!(await CanPayCostOfEntry(Context.User.Id)))

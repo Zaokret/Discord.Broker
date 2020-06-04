@@ -49,9 +49,6 @@ namespace DiscordBot.Services
                 await _commands.AddModuleAsync(typeof(CoinModule), _provider);
                 await _commands.AddModuleAsync(typeof(CoinWarModule), _provider);
                 await _commands.AddModuleAsync(typeof(PollModule), _provider);
-            }
-            else
-            {
                 await _commands.AddModuleAsync(typeof(MafiaModule), _provider);
             }
         }

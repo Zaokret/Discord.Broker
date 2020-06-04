@@ -6,6 +6,6 @@ namespace DiscordBot.Game.Mafia
 {
     public static class GameConfiguration
     {
-        public static int NumberOfPlayers { get; set; }
+        public static readonly int NumberOfPlayers = 8;
     }
 }
