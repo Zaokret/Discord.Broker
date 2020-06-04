@@ -109,7 +109,7 @@ namespace DiscordBot.Game.Mafia
         private async Task Dispose()
         {
             await UnlockChannelForUsers(DayChannel, ActiveGame.Players.Select(s => s.User));
-            await DayChannel.SendMessageAsync("Senate floor splits in two as an earthquake shakes the ground. All are permitted to chat until the senate is destroyed ( 10 minutes ).");
+            await DayChannel.SendMessageAsync("Senate floor splits in two as an earthquake shakes the ground. All are permitted to chat until the senate is destroyed ( 2 minutes ).");
             RemoveMonitors();
             await Task.WhenAll(new[]
             {
@@ -120,7 +120,7 @@ namespace DiscordBot.Game.Mafia
             Phases.Clear();
             PendingGameService.PendingGames.Clear();
             ActiveGame = null;
-            await Task.Delay(TimeSpan.FromMinutes(10));
+            await Task.Delay(TimeSpan.FromMinutes(2));
             await DayChannel.DeleteAsync();
         }
 
@@ -516,8 +516,12 @@ namespace DiscordBot.Game.Mafia
             }
         }
 
-        private async Task LockChannelForUsers(RestTextChannel channel, IEnumerable<IUser> users)
+        private async Task<bool> LockChannelForUsers(RestTextChannel channel, IEnumerable<IUser> users, int retries = 10)
         {
+            if (retries == 0)
+            {
+                return false;
+            }
             OverwritePermissions perms = BasicViewChannelPerms(channel);
             await Task.WhenAll(users.Select(user =>
             {
@@ -526,12 +530,17 @@ namespace DiscordBot.Game.Mafia
             IEnumerable<IUser> brokenUsers = UsersWithIncorrectPermissions(perms, channel.Id, users);
             if (brokenUsers.Any())
             {
-                await LockChannelForUsers(channel, brokenUsers);
+                return await LockChannelForUsers(channel, brokenUsers, retries - 1);
             }
+            return true;
         }
 
-        private async Task UnlockChannelForUsers(RestTextChannel channel, IEnumerable<IUser> users)
+        private async Task<bool> UnlockChannelForUsers(RestTextChannel channel, IEnumerable<IUser> users, int retries = 10)
         {
+            if(retries == 0)
+            {
+                return false;
+            }
             OverwritePermissions perms = InteractChannelPerms(channel);
             await Task.WhenAll(users.Select(user =>
             {
@@ -540,8 +549,9 @@ namespace DiscordBot.Game.Mafia
             IEnumerable<IUser> brokenUsers = UsersWithIncorrectPermissions(perms, channel.Id, users);
             if(brokenUsers.Any())
             {
-                await UnlockChannelForUsers(channel, brokenUsers);
+                return await UnlockChannelForUsers(channel, brokenUsers, retries - 1);
             }
+            return true;
         }
 
         private OverwritePermissions BasicViewChannelPerms(RestTextChannel channel)

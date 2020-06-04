@@ -12,6 +12,8 @@ namespace DiscordBot.Game.Mafia.Views
 
         public static string LeftLobby() => "You left the game lobby.";
 
+        public static string DeletedLobby() => "Game lobby deleted.";
+
         public static string LobbyStatus(int usersInLobby) => $"{usersInLobby}/{GameConfiguration.NumberOfPlayers} users in lobby.";
 
         public static string GameStarting() => "Game lobby is full and game creation is in progress...";

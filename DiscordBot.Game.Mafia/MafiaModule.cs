@@ -43,7 +43,7 @@ namespace DiscordBot.Game.Mafia
             {
                 await ReplyAsync(ErrorView.NotEnoughFunds());
             }
-            if(PendingGameService.PendingGames.Any())
+            else if(PendingGameService.PendingGames.Any())
             {
                 await ReplyAsync(ErrorView.MultipleGames());
             }
@@ -63,7 +63,7 @@ namespace DiscordBot.Game.Mafia
             {
                 await ReplyAsync(ErrorView.NotEnoughFunds());
             }
-            if (PendingGameService.PendingGames.Count == 0)
+            else if (PendingGameService.PendingGames.Count == 0)
             {
                 await ReplyAsync(ErrorView.NotFound());
             }
@@ -115,6 +115,11 @@ namespace DiscordBot.Game.Mafia
                 {
                     game.Users.Remove(Context.User);
                     await ReplyAsync(InfoView.LeftLobby());
+                    if (game.Users.Count == 0)
+                    {
+                        PendingGameService.PendingGames.Clear();
+                        await ReplyAsync(InfoView.DeletedLobby());
+                    }
                 }
             }
         }
