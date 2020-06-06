@@ -95,6 +95,28 @@ namespace DiscordBot.Game.Mafia
             }
         }
 
+        [Command("lobby")]
+        public async Task PlayersInGameLobby()
+        {
+            if (PendingGameService.PendingGames.Count == 0)
+            {
+                await ReplyAsync(ErrorView.NotFound());
+            }
+            else
+            {
+                PendingGame game = PendingGameService.PendingGames.FirstOrDefault();
+                if(game.Users.Any())
+                {
+                    string message = string.Join(", ", game.Users.Select(u => MentionUtils.MentionUser(u.Id)));
+                    await ReplyAsync(message);
+                }
+                else
+                {
+                    await ReplyAsync("Game lobby is empty.");
+                }
+            }
+        }
+
         [Command("leave")]
         [Summary("Leaves a pending warewolf game.")]
         public async Task LeavePendingGame()
@@ -106,14 +128,15 @@ namespace DiscordBot.Game.Mafia
             else
             {
                 PendingGame game = PendingGameService.PendingGames.FirstOrDefault();
+                IUser user = game.Users.FirstOrDefault(u => u.Id == Context.User.Id);
                 if (game.Active)
                 {
-                    _game.RemoveUserFromPlay(Context.User);
+                    _game.RemoveUserFromPlay(user);
                     await _game.NotifyPlayerLeft(Context.User);
                 }
                 else
                 {
-                    game.Users.Remove(Context.User);
+                    game.Users.Remove(user);
                     await ReplyAsync(InfoView.LeftLobby());
                     if (game.Users.Count == 0)
                     {
