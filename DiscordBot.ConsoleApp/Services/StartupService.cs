@@ -44,12 +44,13 @@ namespace DiscordBot.Services
 
             _commands.AddTypeReader<List<string>>(new ListOfStringTypeReader());
 
-            if(EnvironmentConfiguration.IsProduction())
+            if (EnvironmentConfiguration.IsProduction())
             {
                 await _commands.AddModuleAsync(typeof(CoinModule), _provider);
                 await _commands.AddModuleAsync(typeof(CoinWarModule), _provider);
                 await _commands.AddModuleAsync(typeof(PollModule), _provider);
                 await _commands.AddModuleAsync(typeof(MafiaModule), _provider);
+                await _commands.AddModuleAsync(typeof(InfoModule), _provider);
             }
         }
     }

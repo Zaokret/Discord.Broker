@@ -32,12 +32,5 @@ namespace DiscordBot.Broker
                 await pollMessage.AddReactionsAsync(poll.Emojis.Select(e => new Emoji(e)).ToArray());
             }
         }
-
-        [Command("poll")]
-        [Summary("Creates a poll.")]
-        public async Task GetCoinsAsync()
-        {
-            await ReplyAsync("Create a poll by sending a message [$poll \"optionName1, optionName2, optionName3\" Title: \"Title Text\" Description: \"Description Text\"] Send \"\" instead of options to create a yes/no poll.");
-        }
     }
 }

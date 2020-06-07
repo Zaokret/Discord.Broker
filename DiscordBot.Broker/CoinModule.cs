@@ -80,14 +80,7 @@ namespace DiscordBot.Modules
                 }); 
             }
         }
-
-        [Command("help")]
-        [Summary("Send help instructions.")]
-        public async Task GetHelp()
-        {
-            await Context.Channel.SendFileAsync("./assets/guide-to-staying-relaxed.mp3");
-        }
-
+        
         [RequiredBotAuthor]
         [Command("refund")]
         public async Task RefundFunds(int funds, IUser user)
