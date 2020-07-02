@@ -25,5 +25,15 @@ namespace DiscordBot.Broker
                 .WithColor(Color.Gold)
                 .Build();
         }
+
+        public static Embed Donate(string url)
+        {
+            return new EmbedBuilder()
+                .WithTitle("Donate")
+                .WithUrl(url)
+                .WithDescription("Keep me in business.")
+                .WithColor(Color.Blue)
+                .Build();
+        }
     }
 }

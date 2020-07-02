@@ -24,7 +24,10 @@ namespace DiscordBot
             await Console.Out.WriteLineAsync("Enter a valid discord bot token:");
             string token = await Console.In.ReadLineAsync();
 
-            await Startup.RunAsync(new[] { token });
+            await Console.Out.WriteLineAsync("Enter your paypal business:");
+            string business = await Console.In.ReadLineAsync();
+
+            await Startup.RunAsync(new[] { token, business });
             await Task.Delay(-1); // Keep the program alive
         }
     }

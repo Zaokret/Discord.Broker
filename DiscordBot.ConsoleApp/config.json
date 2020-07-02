@@ -6,5 +6,6 @@
       "emoteName": "Attar_Coin",
       "value": 1
     }
-  ]
+  ],
+  "payPal": "https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business={0}&lc=US&item_name=Keep+Attarcoin+Broker+In+Business&no_note=0&cn=&currency_code=USD&bn=PP-DonationsBF:btn_donateCC_LG.gif:NonHosted"
 }

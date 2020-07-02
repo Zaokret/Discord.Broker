@@ -28,7 +28,7 @@ namespace DiscordBot
         public Startup(string[] args)
         {
             JsonConfiguration jsonConfig = JsonConvert.DeserializeObject<JsonConfiguration>(File.ReadAllText("config.json"));
-            Configuration = new GlobalConfiguration(args[0], jsonConfig);
+            Configuration = new GlobalConfiguration(args[0], args[1], jsonConfig);
         }
 
         public static async Task RunAsync(string[] args)

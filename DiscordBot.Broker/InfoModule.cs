@@ -11,9 +11,19 @@ namespace DiscordBot.Broker
     public class InfoModule : ModuleBase<SocketCommandContext>
     {
         private readonly DiscordSocketClient _client;
-        public InfoModule(DiscordSocketClient client)
+        private readonly GlobalConfiguration _config;
+
+        public InfoModule(DiscordSocketClient client, GlobalConfiguration config)
         {
+            _config = config ?? throw new ArgumentNullException(nameof(config));
             _client = client ?? throw new ArgumentNullException(nameof(client));
+        }
+
+        [Command("donate")]
+        [Summary("Send donation link.")]
+        public async Task Donate()
+        {
+            await ReplyAsync(string.Empty, false, EmbedViews.Donate(_config.PayPalUrl));
         }
 
         [Command("help")]
@@ -65,14 +75,20 @@ namespace DiscordBot.Broker
 
             string help = "$help - provides you with first-grade relaxation audiotape";
 
+            string donateDesc = $"Keep AttarcoinBroker bot running by [donating]({_config.PayPalUrl}).";
+
+            string donateCommnad = "$donate - provides you with donate link.";
+
             Embed message = new EmbedBuilder()
                 .WithAuthor(_client.CurrentUser)
                 .WithTitle("Commands")
+                .WithDescription(donateDesc)
                 .AddField("Coins", string.Join("\n", coins))
                 .AddField("Auction", auction)
                 .AddField("Occult", string.Join("\n", occult))
                 .AddField("Poll", string.Join("\n", polls))
                 .AddField("Help", help)
+                .AddField("Donate", donateCommnad)
                 .WithColor(Color.Green)
                 .Build();
 
