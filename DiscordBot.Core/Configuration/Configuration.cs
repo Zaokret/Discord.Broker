@@ -14,18 +14,15 @@ namespace DiscordBot
 
     public class GlobalConfiguration : JsonConfiguration
     {
-        public GlobalConfiguration(string token, string paypalBusiness, JsonConfiguration jsonConfig)
+        public GlobalConfiguration(string token, JsonConfiguration jsonConfig)
         {
             if (string.IsNullOrWhiteSpace(token))
                 throw new ArgumentNullException(nameof(token));
 
-            if (string.IsNullOrWhiteSpace(paypalBusiness))
-                throw new ArgumentNullException(nameof(paypalBusiness));
-
             Coins = jsonConfig.Coins;
             CommandPrefix = jsonConfig.CommandPrefix;
             Token = token;
-            PayPalUrl = string.Format(jsonConfig.PayPal, paypalBusiness);
+            PayPalUrl = jsonConfig.PayPal;
         }
         public ulong BotAuthor = 563437347899965455;
         public string Token { get; set; }

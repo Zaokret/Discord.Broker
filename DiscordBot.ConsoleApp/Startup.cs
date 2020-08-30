@@ -25,15 +25,15 @@ namespace DiscordBot
     {
         public GlobalConfiguration Configuration { get; }
 
-        public Startup(string[] args)
+        public Startup(string token)
         {
             JsonConfiguration jsonConfig = JsonConvert.DeserializeObject<JsonConfiguration>(File.ReadAllText("config.json"));
-            Configuration = new GlobalConfiguration(args[0], args[1], jsonConfig);
+            Configuration = new GlobalConfiguration(token, jsonConfig);
         }
 
         public static async Task RunAsync(string[] args)
         {
-            var startup = new Startup(args);
+            var startup = new Startup(args[0]);
             await startup.RunAsync();
         }
 

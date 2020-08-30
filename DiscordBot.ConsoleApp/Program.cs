@@ -21,13 +21,9 @@ namespace DiscordBot
 
         public async Task MainAsync(string[] args)
         {
-            await Console.Out.WriteLineAsync("Enter a valid discord bot token:");
-            string token = await Console.In.ReadLineAsync();
-
-            await Console.Out.WriteLineAsync("Enter your paypal business:");
-            string business = await Console.In.ReadLineAsync();
-
-            await Startup.RunAsync(new[] { token, business });
+            if (args == null || args.Length != 1)
+                throw new Exception("Token missing as command line argument.");
+            await Startup.RunAsync(args);
             await Task.Delay(-1); // Keep the program alive
         }
     }
