@@ -18,6 +18,7 @@ using DiscordBot.Game.CoinWar;
 using DiscordBot.Infrastructure.Repositories;
 using DiscordBot.ConsoleApp;
 using DiscordBot.Game.Mafia;
+using System.Net.Http;
 
 namespace DiscordBot
 {
@@ -25,15 +26,15 @@ namespace DiscordBot
     {
         public GlobalConfiguration Configuration { get; }
 
-        public Startup(string token)
+        public Startup(string discordToken, string tasteToken)
         {
             JsonConfiguration jsonConfig = JsonConvert.DeserializeObject<JsonConfiguration>(File.ReadAllText("config.json"));
-            Configuration = new GlobalConfiguration(token, jsonConfig);
+            Configuration = new GlobalConfiguration(discordToken, tasteToken, jsonConfig);
         }
 
         public static async Task RunAsync(string[] args)
         {
-            var startup = new Startup(args[0]);
+            var startup = new Startup(args[0], args[1]);
             await startup.RunAsync();
         }
 
@@ -56,7 +57,8 @@ namespace DiscordBot
 
         private void ConfigureServices(IServiceCollection services)
         {
-            services.AddSingleton(new DiscordSocketClient(new DiscordSocketConfig
+            services
+            .AddSingleton(new DiscordSocketClient(new DiscordSocketConfig
             {                                       
                 LogLevel = LogSeverity.Verbose,       
                 MessageCacheSize = 1000              
@@ -66,6 +68,7 @@ namespace DiscordBot
                 LogLevel = LogSeverity.Verbose,       
                 DefaultRunMode = RunMode.Async,       
             }))
+            .AddSingleton<HttpClient>()
             .AddSingleton<CommandHandler>()  
             .AddSingleton<StartupService>()         
             .AddSingleton<LoggingService>()         
@@ -77,6 +80,7 @@ namespace DiscordBot
             .AddSingleton<CollectablePickerService>()
             .AddSingleton<MafiaService>()
             .AddScoped<CoinService>()
+            .AddScoped<TasteService>()
             .AddTransient<InteractiveService>()
             .AddTransient<PollService>()
             .AddSingleton(Configuration);           

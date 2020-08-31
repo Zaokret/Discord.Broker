@@ -35,7 +35,7 @@ namespace DiscordBot.Services
 
         public async Task StartAsync()
         {
-            string discordToken = _config.Token;
+            string discordToken = _config.DiscordToken;
             if (string.IsNullOrWhiteSpace(discordToken))
                 throw new Exception("Please enter a valid bot's token.");
 
@@ -51,7 +51,7 @@ namespace DiscordBot.Services
                 await _commands.AddModuleAsync(typeof(PollModule), _provider);
                 await _commands.AddModuleAsync(typeof(MafiaModule), _provider);
                 await _commands.AddModuleAsync(typeof(InfoModule), _provider);
-            }
+            } 
         }
     }
 }

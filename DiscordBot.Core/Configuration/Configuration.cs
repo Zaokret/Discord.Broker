@@ -14,18 +14,23 @@ namespace DiscordBot
 
     public class GlobalConfiguration : JsonConfiguration
     {
-        public GlobalConfiguration(string token, JsonConfiguration jsonConfig)
+        public GlobalConfiguration(string discordToken, string tasteToken, JsonConfiguration jsonConfig)
         {
-            if (string.IsNullOrWhiteSpace(token))
-                throw new ArgumentNullException(nameof(token));
+            if (string.IsNullOrWhiteSpace(discordToken))
+                throw new ArgumentNullException(nameof(discordToken));
+
+            if (string.IsNullOrWhiteSpace(tasteToken))
+                throw new ArgumentNullException(nameof(tasteToken));
 
             Coins = jsonConfig.Coins;
             CommandPrefix = jsonConfig.CommandPrefix;
-            Token = token;
+            DiscordToken = discordToken;
             PayPalUrl = jsonConfig.PayPal;
+            TasteToken = tasteToken;
         }
         public ulong BotAuthor = 563437347899965455;
-        public string Token { get; set; }
+        public string DiscordToken { get; set; }
         public string PayPalUrl { get; set; }
+        public string TasteToken { get; set; }
     }
 }

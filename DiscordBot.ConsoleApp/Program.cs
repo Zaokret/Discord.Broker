@@ -21,8 +21,8 @@ namespace DiscordBot
 
         public async Task MainAsync(string[] args)
         {
-            if (args == null || args.Length != 1)
-                throw new Exception("Token missing as command line argument.");
+            if (args == null || args.Length != 2)
+                throw new Exception("Tokens missing as command line argument.");
             await Startup.RunAsync(args);
             await Task.Delay(-1); // Keep the program alive
         }
