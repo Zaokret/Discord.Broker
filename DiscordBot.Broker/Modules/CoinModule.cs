@@ -17,13 +17,22 @@ namespace DiscordBot.Modules
     {
         private readonly IUserRepository _userRepository;
         private readonly CoinService _service;
-        private readonly DiscordSocketClient _client;
+        private readonly Random rand = new Random();
 
-        public CoinModule(IUserRepository userRepository, CoinService service, DiscordSocketClient client)
+        public CoinModule(IUserRepository userRepository, CoinService service)
         {
-            _client = client ?? throw new ArgumentNullException(nameof(client));
             _service = service ?? throw new ArgumentNullException(nameof(service));
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
+        }
+
+        [Command("flip")]
+        [Summary("Coin flip")]
+        public async Task CoinFlip()
+        {
+            if (rand.Next(0, 2) == 1)
+                await ReplyAsync("Heads");
+            else
+                await ReplyAsync("Tails");
         }
 
         [Command("coins")]

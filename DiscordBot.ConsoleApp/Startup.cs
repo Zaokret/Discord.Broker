@@ -19,6 +19,8 @@ using DiscordBot.Infrastructure.Repositories;
 using DiscordBot.ConsoleApp;
 using DiscordBot.Game.Mafia;
 using System.Net.Http;
+using DiscordBot.Escrow;
+using DiscordBot.Infrastructure.Contexts;
 
 namespace DiscordBot
 {
@@ -74,13 +76,17 @@ namespace DiscordBot
             .AddSingleton<LoggingService>()         
             .AddSingleton<IUserRepository, JsonUserRepository>()
             .AddSingleton<CollectableRepository>()
+            .AddSingleton<DynamicConfigurationRepository>()
+            .AddSingleton<BetRepository>()
             .AddSingleton<UserEntityContextProvider>()
+            .AddSingleton<BetEntityContextProvider>()
             .AddSingleton<ReactionController>()
             .AddSingleton<GameService>() // should this stay singleton ? 
             .AddSingleton<CollectablePickerService>()
             .AddSingleton<MafiaService>()
             .AddScoped<CoinService>()
             .AddScoped<TasteService>()
+            .AddScoped<BetService>()
             .AddTransient<InteractiveService>()
             .AddTransient<PollService>()
             .AddSingleton(Configuration);           

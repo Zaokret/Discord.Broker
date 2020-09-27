@@ -60,7 +60,8 @@ namespace DiscordBot.Broker
                 "$coins - check your balance",
                 "$coins @user - check user's balance",
                 "$transfer X @user - transfer X number of coins to user",
-                "$rich - check 5 richest users and your rank"
+                "$rich - check 5 richest users and your rank",
+                "$flip - flip a coin"
             };
 
             string[] polls = new string[]
@@ -93,12 +94,15 @@ namespace DiscordBot.Broker
                 "$recommend \"search term\" - media recommendations based on searched term."
             };
 
+            string bets = "$bet-help - bet instructions and commands";
+
             return new EmbedBuilder()
                 .WithAuthor(user)
                 .WithTitle("Commands")
                 .WithDescription(donateDesc)
                 .AddField("Coins", string.Join("\n", coins))
                 .AddField("Auction", auction)
+                .AddField("Bets", bets)
                 .AddField("Occult", string.Join("\n", occult))
                 .AddField("Poll", string.Join("\n", polls))
                 .AddField("Help", help)
