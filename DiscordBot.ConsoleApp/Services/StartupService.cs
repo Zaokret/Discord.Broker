@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using DiscordBot.Broker;
 using DiscordBot.ConsoleApp;
 using DiscordBot.Game.Mafia;
+using DiscordBot.Escrow;
 
 namespace DiscordBot.Services
 {
@@ -51,7 +52,13 @@ namespace DiscordBot.Services
                 await _commands.AddModuleAsync(typeof(PollModule), _provider);
                 await _commands.AddModuleAsync(typeof(MafiaModule), _provider);
                 await _commands.AddModuleAsync(typeof(InfoModule), _provider);
-            } 
+                await _commands.AddModuleAsync(typeof(BetModule), _provider);
+            }
+            else
+            {
+                await _commands.AddModuleAsync(typeof(InfoModule), _provider);
+                await _commands.AddModuleAsync(typeof(BetModule), _provider);
+            }
         }
     }
 }

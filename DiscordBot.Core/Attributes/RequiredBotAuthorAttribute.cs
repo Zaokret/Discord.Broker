@@ -1,4 +1,5 @@
-﻿using Discord.Commands;
+﻿using Discord;
+using Discord.Commands;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -19,7 +20,7 @@ namespace DiscordBot.Core.Attributes
             }
             else
             {
-                return Task.FromResult(PreconditionResult.FromError($"Only bot author can run this command."));
+                return Task.FromResult(PreconditionResult.FromError($"Only bot author {MentionUtils.MentionUser(config.BotAuthor)} can run this command."));
             }
         }
     }
