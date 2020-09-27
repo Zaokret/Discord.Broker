@@ -2,7 +2,6 @@
   "profiles": {
     "DiscordBot.ConsoleApp": {
       "commandName": "Project",
-      "commandLineArgs": "NzEwNTk1ODk2MjUzMDg3NzQ1.XsMElg.EzM7Vnk7yYeEwI1kOWBKgrI65eY 383674-Attarcoi-M1DK2SUI",
       "environmentVariables": {
         "Environment": "Development"
       }

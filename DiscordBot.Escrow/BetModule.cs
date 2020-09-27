@@ -105,7 +105,7 @@ namespace DiscordBot.Escrow
             if(amount > 0)
             {
                 float funds = await _coinService.GetFundsByUserId(Context.User.Id);
-                if (false) //amount > funds
+                if (amount > funds)
                 {
                     await ReplyAsync($"Not enough Attarcoins. Available: {funds} Attarcoins.");
                 }
@@ -114,7 +114,7 @@ namespace DiscordBot.Escrow
                     Bet bet = await _betService.CreateQuickBet(Context.User, amount);
                     if(bet != null)
                     {
-                        //await _coinService.RemoveFunds(Context.User.Id, amount);
+                        await _coinService.RemoveFunds(Context.User.Id, amount);
                         await ReplyAsync(string.Empty, false, BetView.QuickBetCreated(bet, Context.User, amount));
                     }
                     else
@@ -188,7 +188,7 @@ namespace DiscordBot.Escrow
         public async Task PlaceABet(string betName, int betOptionId, int amount) 
         {
             float funds = await _coinService.GetFundsByUserId(Context.User.Id);
-            if (false) // amount > funds 
+            if (amount > funds)
             {
                 await ReplyAsync($"Not enough Attarcoins. Available: {funds} Attarcoins.");
             }
@@ -197,7 +197,7 @@ namespace DiscordBot.Escrow
                 Bettor bettor = await _betService.PlaceBet(Context.User.Id, amount, betOptionId, betName);
                 if (bettor != null)
                 {
-                    //await _coinService.RemoveFunds(Context.User.Id, amount);
+                    await _coinService.RemoveFunds(Context.User.Id, amount);
                     Bet bet = await _betService.GetBetByName(betName);
                     await ReplyAsync(string.Empty, false, BetView.BetPlaced(bet, bettor, Context.User));
                 }
