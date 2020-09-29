@@ -25,7 +25,19 @@ namespace DiscordBot.Escrow
         {
             if (bet == null || bet.Bettors.Count() == 0)
                 return "none";
-            return string.Join("\n", bet.Bettors.Select(o => $"{MentionUtils.MentionUser(o.UserId)} bet {o.Amount} Attarcoins on '{BetOptionNameById(bet, o.BetOptionId)}'"));
+
+            var groups = bet.Bettors
+                .GroupBy(b => b.BetOptionId)
+                .Select(g => 
+                {
+                    string optionName = BetOptionNameById(bet, g.Key);
+                    IEnumerable<string> bettors = g
+                     .OrderByDescending(b => b.Amount)
+                     .Select(b => $"{MentionUtils.MentionUser(b.UserId)} bet {b.Amount} Attarcoins.");
+                    return string.Format("{0}:\n\n{1}", optionName, string.Join("\n", bettors));
+                });
+
+            return string.Join("\n\n", groups);
         }
 
         private static string Rewards(IEnumerable<BetReward> rewards)
