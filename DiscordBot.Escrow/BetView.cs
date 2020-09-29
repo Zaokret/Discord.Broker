@@ -30,11 +30,12 @@ namespace DiscordBot.Escrow
                 .GroupBy(b => b.BetOptionId)
                 .Select(g => 
                 {
-                    string optionName = BetOptionNameById(bet, g.Key);
+                    BetOption option = bet.Options.FirstOrDefault(o => o.Id == g.Key);
                     IEnumerable<string> bettors = g
                      .OrderByDescending(b => b.Amount)
                      .Select(b => $"{MentionUtils.MentionUser(b.UserId)} bet {b.Amount} Attarcoins.");
-                    return string.Format("{0}:\n\n{1}", optionName, string.Join("\n", bettors));
+
+                    return $"[{option.Id}] ({option.Odds:F}) {option.Name}\n\n{bettors}";
                 });
 
             return string.Join("\n\n", groups);
@@ -164,7 +165,7 @@ namespace DiscordBot.Escrow
                 .WithTitle("Bet instructions")
                 .WithDescription(string.Join("\n\n", instructions))
                 .AddField("Create custom bet", "$bet-create \"BET NAME\" \"BET DESCRIPTION\" \n$bet-create \"BET NAME\"")
-                .AddField("Create quick bet with default odds 2.00", "$bet-quick AMOUNT \n$bet-create \"BET NAME\" \"option one, option two, option three\"")
+                .AddField("Create quick bet with default odds 2.00", "$bet-quick AMOUNT \n$bet-quick \"BET NAME\" \"option one, option two, option three\"")
                 .AddField("Create bet option", "$bet-option \"BET NAME\" \"OPTION NAME\" ODDS")
                 .AddField("Place bet or add more coins to your bet", "$bet-place \"BET NAME\" OPTIONID AMOUNT")
                 .AddField("Admit loss", "$bet-release \"BET NAME\"")
