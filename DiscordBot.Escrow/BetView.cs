@@ -25,7 +25,7 @@ namespace DiscordBot.Escrow
         {
             if (bet == null || bet.Bettors.Count() == 0)
                 return "none";
-            return string.Join("\n", bet.Bettors.Select(o => $"{MentionUtils.MentionUser(o.UserId)} bet {o.Amount} Attarcoins on [{BetOptionNameById(bet, o.BetOptionId)}]"));
+            return string.Join("\n", bet.Bettors.Select(o => $"{MentionUtils.MentionUser(o.UserId)} bet {o.Amount} Attarcoins on '{BetOptionNameById(bet, o.BetOptionId)}'"));
         }
 
         private static string Rewards(IEnumerable<BetReward> rewards)
