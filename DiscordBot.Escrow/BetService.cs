@@ -103,9 +103,9 @@ namespace DiscordBot.Escrow
                     BetOptionId = betOptionId,
                     Released = false
                 };
+                bet.Bettors = bet.Bettors.Concat(new[] { bettor });
             }
-
-            bet.Bettors = bet.Bettors.Concat(new[] { bettor });
+            
             await _repository.UpdateBet(bet);
             await _repository.SaveAsync();
             return bettor;
@@ -246,6 +246,19 @@ namespace DiscordBot.Escrow
             {
                 return await CreateQuickBet(user, amount);
             }
+
+            await _repository.AddBet(bet);
+            await _repository.SaveAsync();
+            return bet;
+        }
+
+        public async Task<Bet> CreateQuickBet(string betName, List<string> options)
+        {
+            float quickOdds = 2;
+            Bet bet = new Bet(betName, string.Empty)
+            {
+                Options = options.Select((option, index) => new BetOption() { Id = index + 1, Name = option, Odds = quickOdds}),
+            };
 
             await _repository.AddBet(bet);
             await _repository.SaveAsync();

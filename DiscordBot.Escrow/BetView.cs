@@ -8,11 +8,24 @@ namespace DiscordBot.Escrow
 {
     public class BetView
     {
-        private static string Bettors(IEnumerable<Bettor> bettors)
+        private static string Options(Bet bet)
         {
-            if (bettors.Count() == 0)
+            if (bet == null || bet.Options.Count() == 0)
+                return string.Empty;
+            return string.Join("\n", bet.Options.Select(o => $"[{o.Id}] ({o.Odds:F}) {o.Name}"));
+        }
+
+        private static string BetOptionNameById(Bet bet, int betOptionId)
+        {
+            BetOption option = bet.Options.FirstOrDefault(o => o.Id == betOptionId);
+            return option?.Name ?? "unknown";
+        }
+
+        private static string Bettors(Bet bet)
+        {
+            if (bet == null || bet.Bettors.Count() == 0)
                 return "none";
-            return string.Join("\n", bettors.Select(o => $"{MentionUtils.MentionUser(o.UserId)} bet {o.Amount} Attarcoins on [{o.BetOptionId}]"));
+            return string.Join("\n", bet.Bettors.Select(o => $"{MentionUtils.MentionUser(o.UserId)} bet {o.Amount} Attarcoins on [{BetOptionNameById(bet, o.BetOptionId)}]"));
         }
 
         private static string Rewards(IEnumerable<BetReward> rewards)
@@ -34,7 +47,7 @@ namespace DiscordBot.Escrow
                     int betted = bet.Bettors
                     .Where(bettor => bettor.BetOptionId == option.Id)
                     .Aggregate(0, (total, bettor) => total + bettor.Amount);
-                    return $"[{option.Id}] {option.Name} ({option.Odds}) with the weight of {betted} coins.";
+                    return $"[{option.Id}] ({option.Odds:F}) {option.Name} with the weight of {betted} coins.";
                 }).ToList();
 
                 return new EmbedFieldBuilder()
@@ -61,6 +74,10 @@ namespace DiscordBot.Escrow
             if (!string.IsNullOrWhiteSpace(bet.Desc)) 
                 builder.WithDescription(bet.Desc);
 
+            string options = Options(bet);
+            if (!string.IsNullOrWhiteSpace(options))
+                builder.AddField("Options", options);
+
             return builder.Build();
         }
 
@@ -85,7 +102,7 @@ namespace DiscordBot.Escrow
                  .WithTitle("Bet option added")
                  .WithDescription($"Bet option '{option.Name}' added to bet '{bet.Name}'.")
                  .AddField("Place bet", $"$bet-place \"{bet.Name}\" {option.Id} AMOUNT")
-                 .AddField("Bettors", Bettors(bet.Bettors))
+                 .AddField("Bettors", Bettors(bet))
                  .WithColor(Color.Green)
                  .Build();
         }
@@ -95,9 +112,9 @@ namespace DiscordBot.Escrow
             return new EmbedBuilder()
                 .WithAuthor(author)
                 .WithTitle($"Bet placed")
-                .WithDescription($"{MentionUtils.MentionUser(bettor.UserId)} placed new bet on '{bet.Name}' [{bettor.BetOptionId}] for {bettor.Amount} Attarcoins.")
+                .WithDescription($"{MentionUtils.MentionUser(bettor.UserId)} placed new bet on '{bet.Name}' option '{BetOptionNameById(bet, bettor.BetOptionId)}' for {bettor.Amount} Attarcoins.")
                 .AddField("Withdraw or release bet", $"$bet-release \"{bet.Name}\"")
-                .AddField("Bettors", Bettors(bet.Bettors))
+                .AddField("Bettors", Bettors(bet))
                 .WithColor(Color.Green)
                 .Build();
         }
@@ -107,7 +124,7 @@ namespace DiscordBot.Escrow
             EmbedBuilder builder = new EmbedBuilder()
                 .WithTitle($"Bet '{bet.Name}' resolved")
                 .WithDescription(string.IsNullOrWhiteSpace(bet.Desc) ? "No description." : bet.Desc)
-                .AddField("Bettors", Bettors(bet.Bettors))
+                .AddField("Bettors", Bettors(bet))
                 .AddField("Rewards", Rewards(rewards))
                 .WithColor(Color.Green);
 
@@ -134,8 +151,8 @@ namespace DiscordBot.Escrow
             return new EmbedBuilder()
                 .WithTitle("Bet instructions")
                 .WithDescription(string.Join("\n\n", instructions))
-                .AddField("Create bet", "$bet-create \"BET NAME\" \"BET DESCRIPTION\"")
-                .AddField("Create quick bet", "$bet-quick AMOUNT")
+                .AddField("Create custom bet", "$bet-create \"BET NAME\" \"BET DESCRIPTION\" \n$bet-create \"BET NAME\"")
+                .AddField("Create quick bet with default odds 2.00", "$bet-quick AMOUNT \n$bet-create \"BET NAME\" \"option one, option two, option three\"")
                 .AddField("Create bet option", "$bet-option \"BET NAME\" \"OPTION NAME\" ODDS")
                 .AddField("Place bet or add more coins to your bet", "$bet-place \"BET NAME\" OPTIONID AMOUNT")
                 .AddField("Admit loss", "$bet-release \"BET NAME\"")

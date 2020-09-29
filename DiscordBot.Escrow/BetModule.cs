@@ -127,6 +127,36 @@ namespace DiscordBot.Escrow
         }
 
         [RequiredJudgeAssigned]
+        [Command("bet-quick")]
+        [Summary("Create quick bet.")]
+        public async Task CreateBet(string name, List<string> options)
+        {
+            string format = "$bet-quick \"name\", \"option one, option two, option three\"";
+            if(string.IsNullOrWhiteSpace(name))
+            {
+                await ReplyAsync($"{nameof(name)} is empty. Correct format is {format}.");
+            }
+            else if(options.Count == 0)
+            {
+                await ReplyAsync($"{nameof(options)} is empty. Correct format is {format}.");
+            }
+            else
+            {
+                Bet existing = await _betService.GetBetByName(name);
+                if (existing == null)
+                {
+                    Bet bet = await _betService.CreateQuickBet(name, options);
+                    await ReplyAsync(string.Empty, false, BetView.BetCreated(bet, Context.User));
+                }
+                else
+                {
+                    await ReplyAsync($"Bet with name '{name}' already exist. Try a different one.");
+                }
+            }
+            
+        }
+
+        [RequiredJudgeAssigned]
         [Command("bet-create")]
         [Summary("Create bet")]
         public async Task CreateBet(string name, string description)
