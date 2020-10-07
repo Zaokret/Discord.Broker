@@ -35,7 +35,7 @@ namespace DiscordBot.Escrow
                      .OrderByDescending(b => b.Amount)
                      .Select(b => $"{MentionUtils.MentionUser(b.UserId)} bet {b.Amount} Attarcoins.");
 
-                    return $"[{option.Id}] ({option.Odds:F}) {option.Name}\n\n{bettors}";
+                    return $"[{option.Id}] ({option.Odds:F}) {option.Name}\n\n{string.Join("\n", bettors)}";
                 });
 
             return string.Join("\n\n", groups);
