@@ -98,7 +98,13 @@ namespace DiscordBot.Escrow
                     return $"[{option.Id}] ({option.Odds:F}) {option.Name}\n\n{string.Join("\n", bettors)}";
                 });
 
-            return builder.WithValue(string.Join("\n\n", groups));
+            string message = string.Join("\n\n", groups);
+            if(message.Length > EmbedFieldBuilder.MaxFieldValueLength)
+            {
+                return null;
+            }
+
+            return builder.WithValue(message);
         }
 
         private static string Rewards(IEnumerable<BetReward> rewards)
@@ -175,7 +181,7 @@ namespace DiscordBot.Escrow
 
             embeds.Add(builder);
 
-            if (bettors.Value.ToString().Length <= EmbedFieldBuilder.MaxFieldValueLength)
+            if (bettors != null)
             {
                 builder.AddField(bettors);
             }
@@ -214,7 +220,6 @@ namespace DiscordBot.Escrow
             EmbedBuilder builder = new EmbedBuilder()
                 .WithTitle($"Bet '{bet.Name}' resolved")
                 .WithDescription(string.IsNullOrWhiteSpace(bet.Desc) ? "No description." : bet.Desc)
-                .AddField("Bettors", BettorDescription(bet))
                 .AddField("Rewards", Rewards(rewards))
                 .WithColor(Color.Green);
 
