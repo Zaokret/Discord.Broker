@@ -10,6 +10,7 @@ namespace DiscordBot
         public IEnumerable<Coin> Coins { get; set; }
         public string PayPal { get; set; }
         public char CommandPrefix { get; set; }
+        public char TestCommandPrefix { get; set; }
     }
 
     public class GlobalConfiguration : JsonConfiguration
@@ -27,7 +28,9 @@ namespace DiscordBot
             DiscordToken = discordToken;
             PayPalUrl = jsonConfig.PayPal;
             TasteToken = tasteToken;
+            TestCommandPrefix = jsonConfig.TestCommandPrefix;
         }
+
         public ulong BotAuthor = 563437347899965455;
         public string DiscordToken { get; set; }
         public string PayPalUrl { get; set; }

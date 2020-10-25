@@ -1,5 +1,6 @@
 using Discord.Commands;
 using Discord.WebSocket;
+using DiscordBot.ConsoleApp;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -32,8 +33,11 @@ namespace DiscordBot.Services
       if (!(messageParam is SocketUserMessage message)) return;
 
       int argPos = 0;
+      char prefix = EnvironmentConfiguration.IsDevelopment()
+                ? _config.TestCommandPrefix
+                : _config.CommandPrefix;
 
-      if (!(message.HasCharPrefix(_config.CommandPrefix, ref argPos) ||
+      if (!(message.HasCharPrefix(prefix, ref argPos) ||
           message.HasMentionPrefix(_client.CurrentUser, ref argPos)) ||
           (message.Author.IsBot && _client.CurrentUser.Id != messageParam.Author.Id))
         return;

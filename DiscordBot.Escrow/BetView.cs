@@ -8,6 +8,38 @@ namespace DiscordBot.Escrow
 {
     public class BetView
     {
+        public static Embed MineBets(IEnumerable<Bet> bets, ulong userId)
+        {
+            if (!bets.Any())
+                return BetHelp();
+
+            IEnumerable<EmbedFieldBuilder> fields = bets.Select(bet =>
+            {
+                List<string> options = bet.Options.Select(option =>
+                {
+                    int betted = bet.Bettors
+                    .Where(b => b.BetOptionId == option.Id)
+                    .Aggregate(0, (total, b) => total + b.Amount);
+                    return $"[{option.Id}] ({option.Odds:F}) {option.Name} with the weight of {betted} coins.";
+                }).ToList();
+
+                Bettor bettor = bet.Bettors.FirstOrDefault(b => b.UserId == userId);
+                BetOption bettorsOption = bet.Options.FirstOrDefault(o => o.Id == bettor.BetOptionId);
+                options.Add($"\nYou placed {bettor.Amount} Attarcoin on option \"{bettorsOption.Name}\". {(bettor.Released ? "(Released)" : "")}");
+
+                return new EmbedFieldBuilder()
+                .WithIsInline(false)
+                .WithName($"{bet.Name} ({(bet.Resolved ? "Inactive" : "Active")})")
+                .WithValue(options.Count == 0 ? "No options added yet." : string.Join("\n", options));
+            });
+
+            return new EmbedBuilder()
+                .WithTitle("Your bets")
+                .WithColor(Color.Green)
+                .WithFields(fields)
+                .Build();
+        }
+
         private static string Options(Bet bet)
         {
             if (bet == null || bet.Options.Count() == 0)
@@ -21,14 +53,42 @@ namespace DiscordBot.Escrow
             return option?.Name ?? "unknown";
         }
 
-        private static string Bettors(Bet bet)
+        private static IEnumerable<EmbedBuilder> BettorEmbeds(Bet bet)
         {
             if (bet == null || bet.Bettors.Count() == 0)
-                return "none";
+                return new List<EmbedBuilder>();
 
             var groups = bet.Bettors
                 .GroupBy(b => b.BetOptionId)
                 .Select(g => 
+                {
+                    BetOption option = bet.Options.FirstOrDefault(o => o.Id == g.Key);
+
+                    IEnumerable<string> bettors = g
+                     .OrderByDescending(b => b.Amount)
+                     .Select(b => $"{MentionUtils.MentionUser(b.UserId)} bet {b.Amount} Attarcoins.");
+
+                    return new EmbedBuilder()
+                    .WithColor(Color.Green)
+                    .WithTitle($"Option \"{option.Name}\" on bet \"{bet.Name}\"")
+                    .WithDescription($"Id: [{option.Id}]\nOdds: ({option.Odds:F})\n\n{string.Join("\n", bettors)}");
+                });
+
+            return groups;
+        }
+
+        private static EmbedFieldBuilder BettorDescription(Bet bet)
+        {
+            var builder = new EmbedFieldBuilder()
+                .WithName("Bettors")
+                .WithIsInline(false);
+
+            if (bet == null || bet.Bettors.Count() == 0)
+                return builder.WithValue("none");
+
+            var groups = bet.Bettors
+                .GroupBy(b => b.BetOptionId)
+                .Select(g =>
                 {
                     BetOption option = bet.Options.FirstOrDefault(o => o.Id == g.Key);
                     IEnumerable<string> bettors = g
@@ -38,7 +98,7 @@ namespace DiscordBot.Escrow
                     return $"[{option.Id}] ({option.Odds:F}) {option.Name}\n\n{string.Join("\n", bettors)}";
                 });
 
-            return string.Join("\n\n", groups);
+            return builder.WithValue(string.Join("\n\n", groups));
         }
 
         private static string Rewards(IEnumerable<BetReward> rewards)
@@ -108,43 +168,60 @@ namespace DiscordBot.Escrow
             return builder.Build();
         }
 
-        public static Embed BetOptionCreated(Bet bet, BetOption option, IUser author)
+        private static IEnumerable<Embed> WithBettors(Bet bet, EmbedBuilder builder)
         {
-            return new EmbedBuilder()
+            List<EmbedBuilder> embeds = new List<EmbedBuilder>();
+            var bettors = BettorDescription(bet);
+
+            embeds.Add(builder);
+
+            if (bettors.Value.ToString().Length <= EmbedFieldBuilder.MaxFieldValueLength)
+            {
+                builder.AddField(bettors);
+            }
+            else
+            {
+                embeds.AddRange(BettorEmbeds(bet));
+            }
+
+            return embeds.Select(e => e.Build());
+        }
+
+        public static IEnumerable<Embed> BetOptionCreated(Bet bet, BetOption option, IUser author)
+        {
+            var builder = new EmbedBuilder()
                  .WithAuthor(author)
                  .WithTitle("Bet option added")
                  .WithDescription($"Bet option '{option.Name}' added to bet '{bet.Name}'.")
                  .AddField("Place bet", $"$bet-place \"{bet.Name}\" {option.Id} AMOUNT")
-                 .AddField("Bettors", Bettors(bet))
-                 .WithColor(Color.Green)
-                 .Build();
+                 .WithColor(Color.Green);
+            return WithBettors(bet, builder);
         }
 
-        public static Embed BetPlaced(Bet bet, Bettor bettor, IUser author)
+        public static IEnumerable<Embed> BetPlaced(Bet bet, Bettor bettor, IUser author)
         {
-            return new EmbedBuilder()
+            var builder = new EmbedBuilder()
                 .WithAuthor(author)
                 .WithTitle($"Bet placed")
                 .WithDescription($"{MentionUtils.MentionUser(bettor.UserId)} placed new bet on '{bet.Name}' option '{BetOptionNameById(bet, bettor.BetOptionId)}' for {bettor.Amount} Attarcoins.")
                 .AddField("Withdraw or release bet", $"$bet-release \"{bet.Name}\"")
-                .AddField("Bettors", Bettors(bet))
-                .WithColor(Color.Green)
-                .Build();
+                .WithColor(Color.Green);
+            return WithBettors(bet, builder);
         }
 
-        public static Embed BetResolved(Bet bet, IEnumerable<BetReward> rewards, Optional<IUser> author)
+        public static IEnumerable<Embed> BetResolved(Bet bet, IEnumerable<BetReward> rewards, Optional<IUser> author)
         {
             EmbedBuilder builder = new EmbedBuilder()
                 .WithTitle($"Bet '{bet.Name}' resolved")
                 .WithDescription(string.IsNullOrWhiteSpace(bet.Desc) ? "No description." : bet.Desc)
-                .AddField("Bettors", Bettors(bet))
+                .AddField("Bettors", BettorDescription(bet))
                 .AddField("Rewards", Rewards(rewards))
                 .WithColor(Color.Green);
 
             if (author.IsSpecified)
                 builder.WithAuthor(author.Value);
 
-            return builder.Build();
+            return WithBettors(bet, builder);
         }
 
         public static Embed BetHelp()

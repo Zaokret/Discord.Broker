@@ -60,9 +60,9 @@ namespace DiscordBot.Escrow
             await ReplyAsync(
                 string.Empty, 
                 false, 
-                BetView.Bets(
+                BetView.MineBets(
                     await _betService.GetBets((bet => bet.Bettors.Any(bettor => bettor.UserId == Context.User.Id))),
-                    "Your"));
+                    Context.User.Id));
         }
 
         [Command("bet-user")]
@@ -199,7 +199,10 @@ namespace DiscordBot.Escrow
                 BetOption option = await _betService.AddBetOption(name, odds, betName);
                 if (option != null)
                 {
-                    await ReplyAsync(string.Empty, false, BetView.BetOptionCreated(bet, option, Context.User));
+                    foreach(var embed in BetView.BetOptionCreated(bet, option, Context.User))
+                    {
+                        await ReplyAsync(string.Empty, false, embed);
+                    }
                 }
                 else
                 {
@@ -229,7 +232,10 @@ namespace DiscordBot.Escrow
                 {
                     await _coinService.RemoveFunds(Context.User.Id, amount);
                     Bet bet = await _betService.GetBetByName(betName);
-                    await ReplyAsync(string.Empty, false, BetView.BetPlaced(bet, bettor, Context.User));
+                    foreach (var embed in BetView.BetPlaced(bet, bettor, Context.User))
+                    {
+                        await ReplyAsync(string.Empty, false, embed);
+                    }
                 }
                 else
                 {
@@ -253,7 +259,7 @@ namespace DiscordBot.Escrow
                 if (await _betService.CanWithdrawBet(Context.User.Id, betName))
                 {
                     var bettor = await _betService.WithdrawBet(Context.User.Id, betName);
-                    await ReplyAsync($"You have withdrawn {bettor.Amount} coins.");
+                    await ReplyAsync($"{MentionUtils.MentionUser(Context.User.Id)} has withdrawn {bettor.Amount} coins.");
                 }
                 else if (await _betService.CanPayout(betName))
                 {
@@ -264,9 +270,11 @@ namespace DiscordBot.Escrow
                         {
                             await _coinService.AddFunds(reward.UserId, reward.Amount);
                         }
-
                         Bet bet = await _betService.GetBetByName(betName);
-                        await ReplyAsync(string.Empty, false, BetView.BetResolved(bet, rewards, Optional<IUser>.Unspecified));
+                        foreach (var embed in BetView.BetResolved(bet, rewards, Optional<IUser>.Unspecified))
+                        {
+                            await ReplyAsync(string.Empty, false, embed);
+                        }
                     }
                     else
                     {
@@ -291,8 +299,10 @@ namespace DiscordBot.Escrow
             Optional<IUser> user = Optional.Create<IUser>(Context.User);
             if(bet != null)
             {
-                Embed embed = BetView.BetResolved(bet, rewards, user);
-                await ReplyAsync(string.Empty, false, embed);
+                foreach (var embed in BetView.BetResolved(bet, rewards, user))
+                {
+                    await ReplyAsync(string.Empty, false, embed);
+                }
             }
             else
             {
