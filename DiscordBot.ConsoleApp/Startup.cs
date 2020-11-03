@@ -63,7 +63,8 @@ namespace DiscordBot
             .AddSingleton(new DiscordSocketClient(new DiscordSocketConfig
             {                                       
                 LogLevel = LogSeverity.Verbose,       
-                MessageCacheSize = 1000              
+                MessageCacheSize = 1000,
+                AlwaysDownloadUsers = true
             }))
             .AddSingleton(new CommandService(new CommandServiceConfig
             {                                       
