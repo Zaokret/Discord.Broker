@@ -54,6 +54,9 @@ namespace DiscordBot.Escrow
             if (bet == null)
                 return null;
 
+            if (bet.Resolved)
+                return null;
+
             if (odds <= 1)
                 return null;
 
@@ -84,7 +87,7 @@ namespace DiscordBot.Escrow
         public async Task<Bettor> PlaceBet(ulong userId, int amount, int betOptionId, string betName)
         {
             Bet bet = await _repository.GetBetByName(betName);
-            if (bet == null || !bet.Options.Any(o => o.Id == betOptionId) || IsPlacingMultipleBetOptions(userId, bet, betOptionId))
+            if (bet == null || bet.Resolved || !bet.Options.Any(o => o.Id == betOptionId) || IsPlacingMultipleBetOptions(userId, bet, betOptionId))
             {
                 return null;
             }
@@ -129,7 +132,7 @@ namespace DiscordBot.Escrow
         public async Task<bool> CanPayout(string betName)
         {
             Bet bet = await _repository.GetBetByName(betName);
-            if (bet == null)
+            if (bet == null || bet.Resolved)
             {
                 return false;
             }
@@ -142,7 +145,7 @@ namespace DiscordBot.Escrow
         public async Task<bool> CanWithdrawBet(ulong userId, string betName)
         {
             Bet bet = await _repository.GetBetByName(betName);
-            if (bet == null || !bet.Bettors.Any(b => b.UserId == userId))
+            if (bet == null || bet.Resolved || !bet.Bettors.Any(b => b.UserId == userId))
             {
                 return false;
             }
@@ -152,7 +155,7 @@ namespace DiscordBot.Escrow
         public async Task<Bettor> WithdrawBet(ulong userId, string betName)
         {
             Bet bet = await _repository.GetBetByName(betName);
-            if(bet == null)
+            if(bet == null || bet.Resolved)
             {
                 return null;
             }
@@ -166,7 +169,7 @@ namespace DiscordBot.Escrow
         public async Task<IEnumerable<BetReward>> Payout(string betName)
         {
             Bet bet = await _repository.GetBetByName(betName);
-            if (bet == null)
+            if (bet == null || bet.Resolved)
             {
                 return new List<BetReward>();
             }
@@ -192,7 +195,7 @@ namespace DiscordBot.Escrow
         {
             Bet bet = await _repository.GetBetByName(betName);
             BetOption option = bet.Options.FirstOrDefault(o => o.Id == betOptionId);
-            if (bet == null || option == null)
+            if (bet == null || bet.Resolved || option == null)
             {
                 return new List<BetReward>();
             }

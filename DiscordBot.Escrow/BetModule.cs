@@ -299,6 +299,7 @@ namespace DiscordBot.Escrow
             Optional<IUser> user = Optional.Create<IUser>(Context.User);
             if(bet != null)
             {
+                await Task.WhenAll(rewards.Select(r => _coinService.AddFunds(r.UserId, r.Amount)));
                 foreach (var embed in BetView.BetResolved(bet, rewards, user))
                 {
                     await ReplyAsync(string.Empty, false, embed);
