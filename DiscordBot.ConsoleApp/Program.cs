@@ -18,7 +18,7 @@ namespace DiscordBot
     {
         public static void Main(string[] args)
           => new Program().MainAsync(args).GetAwaiter().GetResult();
-        // test
+
         public async Task MainAsync(string[] args)
         {
             if (args == null || args.Length != 2)

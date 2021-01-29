@@ -59,6 +59,40 @@ namespace DiscordBot.Modules
             ulong userId = Context.User.Id;
             List<SocketGuildUser> users = Context.Guild?.Users?.ToList() ?? new List<SocketGuildUser>();
             LeaderboardView leaderboard = await _service.GetLeaderboard(userId, users);
+
+            if(leaderboard == null)
+            {
+                await ReplyAsync("Records are lost. I'll find them, come back later.");
+                return;
+            }
+
+            SocketRole rich = Context.Guild?.Roles?.FirstOrDefault(role => role.Name == "Rich");
+            if(rich != null)
+            {
+                var richMembers = rich.Members ?? new List<SocketGuildUser>();
+                var newRichMembers = leaderboard.TopUsers.Where(newRich => !richMembers.Any(c => c.Id == newRich.User.Id));
+                await Task.WhenAll(newRichMembers.Select(m =>
+                {
+                    var guidUser = Context.Guild?.GetUser(m.User.Id);
+                    if (guidUser == null) 
+                    {
+                        return Task.CompletedTask;
+                    }
+                    return guidUser.AddRoleAsync(rich);
+                }));
+
+                var oldRichToRemove = richMembers.Where(currently => !leaderboard.TopUsers.Any(c => c.User.Id == currently.Id));
+                await Task.WhenAll(oldRichToRemove.Select(u =>
+                {
+                    var guidUser = Context.Guild?.GetUser(u.Id);
+                    if(guidUser == null)
+                    {
+                        return Task.CompletedTask;
+                    }
+                    return guidUser.RemoveRoleAsync(rich);
+                }));
+            } 
+
             await Context.Channel.SendMessageAsync("", false, EmbedViews.Leaderboard(leaderboard));
         }
 
