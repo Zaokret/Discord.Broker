@@ -15,7 +15,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DiscordBot.Broker", "Discor
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DiscordBot.Game.Mafia", "DiscordBot.Game.Mafia\DiscordBot.Game.Mafia.csproj", "{B60A9B1E-A658-4569-9BBC-9528D2AB29C4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiscordBot.Escrow", "DiscordBot.Escrow\DiscordBot.Escrow.csproj", "{F10F2DB9-8B7E-4ECF-8796-F61CA3097735}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DiscordBot.Escrow", "DiscordBot.Escrow\DiscordBot.Escrow.csproj", "{F10F2DB9-8B7E-4ECF-8796-F61CA3097735}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiscordBot.Poker", "DiscordBot.Poker\DiscordBot.Poker.csproj", "{9EC08C2F-2EF5-44CE-8C83-4F7036176F6E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,6 +53,10 @@ Global
 		{F10F2DB9-8B7E-4ECF-8796-F61CA3097735}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F10F2DB9-8B7E-4ECF-8796-F61CA3097735}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F10F2DB9-8B7E-4ECF-8796-F61CA3097735}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9EC08C2F-2EF5-44CE-8C83-4F7036176F6E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9EC08C2F-2EF5-44CE-8C83-4F7036176F6E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9EC08C2F-2EF5-44CE-8C83-4F7036176F6E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9EC08C2F-2EF5-44CE-8C83-4F7036176F6E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
