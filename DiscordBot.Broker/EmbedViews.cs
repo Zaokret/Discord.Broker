@@ -16,9 +16,14 @@ namespace DiscordBot.Broker
 
         public static Embed Leaderboard(LeaderboardView leaderboard)
         {
-            string premessage = leaderboard.TopUsers.All(u => u.User.Id != leaderboard.TheInfinite.Id)
+            string premessage = string.Empty;
+            if (leaderboard.TheInfinite != null)
+            {
+                premessage = leaderboard.TopUsers.All(u => u.User.Id != leaderboard.TheInfinite.Id)
                 ? $"0. {leaderboard.TheInfinite.Username} (infinite leverage)\n\n"
                 : string.Empty;
+            }
+            
             
             string description = string.Join("\n\n", leaderboard.TopUsers.Select(u => UserRankDescription(u)));
 
