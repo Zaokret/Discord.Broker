@@ -23,6 +23,7 @@ namespace DiscordBot.Broker
         public IEnumerable<RankedUser> TopUsers { get; set; }
         public RankedUser IssuerRanking { get; set; }
         public int TotalUsers { get; set; }
+        public IUser TheInfinite { get; set; } // meme
     }
 
     public class CoinService
