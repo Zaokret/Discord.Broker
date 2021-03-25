@@ -38,8 +38,14 @@ namespace DiscordBot.Poker.Models
 
         public void NextHand()
         {
+            // take only players who have funds left
+            var players = Hand.Players.Where(p => {
+                var player = Players.FirstOrDefault(player => player.UserId == p.UserId);
+                return player != null && player.Wallet.Funds > 0;
+            });
+
             // take players from the last hand
-            var turn = new Turn(new Queue<Player>(Hand.Players));
+            var turn = new Turn(new Queue<Player>(players));
 
             // put old button at the start
             turn.PutAtBeginingOfQue(Players.FirstOrDefault(p => p.HasButton).UserId);

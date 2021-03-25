@@ -91,7 +91,11 @@ namespace DiscordBot.Modules
                     }
                     return guidUser.RemoveRoleAsync(rich);
                 }));
-            } 
+            }
+
+            IUser attar = Context.Guild.GetUser(824679553560608809);
+
+            leaderboard.TheInfinite = attar;
 
             await Context.Channel.SendMessageAsync("", false, EmbedViews.Leaderboard(leaderboard));
         }

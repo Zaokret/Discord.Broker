@@ -11,6 +11,62 @@ using Game = DiscordBot.Poker.Models.Game;
 using Action = DiscordBot.Poker.Models.Action;
 using DiscordBot.Poker.Enums;
 using ActionType = DiscordBot.Poker.Enums.ActionType;
+using DiscordBot.Poker.Helpers;
+
+/*
+         * 2 - 10 player game
+         * turn -> hand -> game
+         * 
+         pre flop ( button that rotates, small-blind, blind, deal hole, turn goes on until everyone has played or called the current raise bet )
+         flop ( deal 3 community cards, turn goes on )
+         turn ( deal 1 community card, turn goes on )
+         river ( deal 1 community card, turn goes on )
+         showdown ( reveal card if there are more then one player in play )
+         */
+
+/*
+ there are 4 turns to bet
+ */
+
+/*
+ determining the winner and tie
+ rewards with all in caps
+ */
+
+/*
+ two player rules with blinds
+ */
+
+/*
+ track where the button is
+ track pot
+ track players balance
+ track current raise bet
+ track if all played their turn
+ track how many players all in play
+ */
+
+/*
+ * start hand
+ * 
+ * preflop: position button and blinds
+ * play actions ( call, raise, fold )
+ * 
+ */
+
+/*
+    create lobby
+    join lobby by reacting within a specified timeframe
+    start game when timeframe expires if there are enough players
+
+    send players their hands
+    show community and actions
+    * act with reactions or messages?
+    after each has acted reveal another card
+    repeat * until 5th card is revealed or there are no more moves left to make
+    reward players
+    game continues until only one player remains with coins or everyone left expect one
+*/
 
 namespace DiscordBot.Poker
 {
@@ -21,9 +77,7 @@ namespace DiscordBot.Poker
         private IList<ulong> UserIds { get; set; } = new List<ulong>();
         private Game Game { get; set; }
 
-        /*
-         
-         */
+        
 
         public async Task DelayedStart(ISocketMessageChannel channel, ulong messageId, int buyIn)
         {
@@ -81,47 +135,6 @@ namespace DiscordBot.Poker
             await channel.SendMessageAsync("test");
         }
 
-        /*
-         * 2 - 10 player game
-         * turn -> hand -> game
-         * 
-         pre flop ( button that rotates, small-blind, blind, deal hole, turn goes on until everyone has played or called the current raise bet )
-         flop ( deal 3 community cards, turn goes on )
-         turn ( deal 1 community card, turn goes on )
-         river ( deal 1 community card, turn goes on )
-         showdown ( reveal card if there are more then one player in play )
-         */
-
-        /*
-         there are 4 turns to bet
-         */
-
-        /*
-         determining the winner and tie
-         rewards with all in caps
-         */
-
-        /*
-         two player rules with blinds
-         */
-
-        /*
-         track where the button is
-         track pot
-         track players balance
-         track current raise bet
-         track if all played their turn
-         track how many players all in play
-         */
-
-        /*
-         * start hand
-         * 
-         * preflop: position button and blinds
-         * play actions ( call, raise, fold )
-         * 
-         */
-
         public NextToPlayBreakdown NextToPlay()
         {
             Player p = Game.Hand.Playing();
@@ -152,6 +165,97 @@ namespace DiscordBot.Poker
                 Player = p,
                 Community = Game.Hand.Community
             };
+        }
+
+        public Showdown Showdown()
+        {
+            var hands = HandHelpers.GetPlayerHands(Game.Hand.Players, Game.Hand.Community);
+            var winner = hands.FirstOrDefault();
+            var tiedPlayers = hands.Count(hand => hand.HandRankValue == winner.HandRankValue);
+            if (tiedPlayers > 1)
+            {
+                // tie
+                return new Showdown();
+            } 
+            else
+            {
+                Reward reward = new Reward() { 
+                    Amount = (int)Game.Hand.Pot.Empty(), 
+                    UserId = winner.Player.UserId 
+                };
+                return new Showdown()
+                {
+                    Hands = hands,
+                    Winner = winner,
+                    Rewards = new List<Reward>(new[] { reward })
+                };
+            }
+        }
+
+        public void Next()
+        {
+            if (!Game.IsOver())
+            {
+                if (!Game.Hand.IsOver())
+                {
+                    if (!Game.Hand.Turn.IsOver())
+                    {
+                        if (Game.Hand.Playing().Wallet.Funds > 0)
+                        {
+                            var breakdown = NextToPlay();
+                            // send breakdown for next to play
+                        }
+                        else
+                        {
+                            // skip those that are all in
+                            Game.Hand.Turn.Next();
+                            Next();
+                        }
+                    }
+                    else
+                    {
+                        // turn over
+                        Game.Hand.NextTurn();
+                        Next();
+                    }
+                }
+                else
+                {
+                    Showdown showdown = Showdown();
+                    // notify
+
+                    GiveReward(showdown.Rewards);
+
+                    PlayersToBeRemoved();
+                    // notify
+
+                    Game.NextHand();
+                    Next();
+                }
+            }
+            else
+            {
+                // game over
+                // terminate
+            }
+        }
+
+        public IEnumerable<Player> PlayersToBeRemoved()
+        {
+            return Game.Players.Where(p => p.Wallet.Funds < 1);
+        }
+
+        public void GiveReward(IEnumerable<Reward> rewards)
+        {
+            Game.Hand.Players = Game.Hand.Players.Select(p =>
+            {
+                var reward = rewards.FirstOrDefault(r => r.UserId == p.UserId);
+                if (reward != null)
+                {
+                    p.Wallet.Deposit(reward.Amount);
+                }
+                return p;
+            }).ToList();
         }
 
         public bool IsUsersTurnToPlay(ulong userId)
@@ -216,66 +320,6 @@ namespace DiscordBot.Poker
             // terminate
         }
 
-        public void Next()
-        {
-            if (!Game.IsOver())
-            {
-                if (!Game.Hand.IsOver())
-                {
-                    if (!Game.Hand.Turn.IsOver())
-                    {
-                        if (Game.Hand.Playing().Wallet.Funds > 0)
-                        {
-                            // send breakdown for next to play
-                            var breakdown = NextToPlay();
-                        }
-                        else
-                        {
-                            // skip those that are all in
-                            Game.Hand.Turn.Next();
-                            Next();
-                        }
-                    }
-                    else
-                    {
-                        // turn over
-                        Game.Hand.NextTurn();
-                        Next();
-                    }
-                }
-                else
-                {
-                    // hand over
-                    Game.NextHand();
-
-                    // determine winner
-                    // determine rewards
-
-                    Next();
-                }
-            }
-            else
-            {
-                // game over
-                // terminate
-            }
-        }
-
         public void Save() { }
-      
-
-        /*
-         create lobby
-         join lobby by reacting within a specified timeframe
-         start game when timeframe expires if there are enough players
-
-         send players their hands
-         show community and actions
-         * act with reactions or messages?
-         after each has acted reveal another card
-         repeat * until 5th card is revealed or there are no more moves left to make
-         reward players
-         game continues until only one player remains with coins or everyone left expect one
-         */
     }
 }
