@@ -12,6 +12,7 @@ using DiscordBot.Broker;
 using DiscordBot.ConsoleApp;
 using DiscordBot.Game.Mafia;
 using DiscordBot.Escrow;
+using DiscordBot.Awards;
 
 namespace DiscordBot.Services
 {
@@ -51,6 +52,7 @@ namespace DiscordBot.Services
             await _commands.AddModuleAsync(typeof(MafiaModule), _provider);
             await _commands.AddModuleAsync(typeof(InfoModule), _provider);
             await _commands.AddModuleAsync(typeof(BetModule), _provider);
+            await _commands.AddModuleAsync(typeof(AwardModule), _provider);
         }
     }
 }

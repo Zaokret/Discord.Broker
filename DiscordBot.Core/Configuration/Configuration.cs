@@ -11,6 +11,9 @@ namespace DiscordBot
         public string PayPal { get; set; }
         public char CommandPrefix { get; set; }
         public char TestCommandPrefix { get; set; }
+        public ulong AwardsChannelID { get; set; }
+        public int AwardCoinAmount { get; set; }
+        public int PinCoinAmount { get; set; }
     }
 
     public class GlobalConfiguration : JsonConfiguration
@@ -29,6 +32,9 @@ namespace DiscordBot
             PayPalUrl = jsonConfig.PayPal;
             TasteToken = tasteToken;
             TestCommandPrefix = jsonConfig.TestCommandPrefix;
+            AwardsChannelID = jsonConfig.AwardsChannelID;
+            AwardCoinAmount = jsonConfig.AwardCoinAmount;
+            PinCoinAmount = jsonConfig.PinCoinAmount;
         }
 
         public ulong BotAuthor = 563437347899965455;

@@ -21,6 +21,7 @@ using DiscordBot.Game.Mafia;
 using System.Net.Http;
 using DiscordBot.Escrow;
 using DiscordBot.Infrastructure.Contexts;
+using DiscordBot.Awards;
 
 namespace DiscordBot
 {
@@ -90,6 +91,7 @@ namespace DiscordBot
             .AddScoped<BetService>()
             .AddTransient<InteractiveService>()
             .AddTransient<PollService>()
+            .AddTransient<AwardService>()
             .AddSingleton(Configuration);           
         }
   }

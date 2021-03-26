@@ -17,6 +17,7 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\DiscordBot.Awards\DiscordBot.Awards.csproj" />
     <ProjectReference Include="..\DiscordBot.Broker\DiscordBot.Broker.csproj" />
     <ProjectReference Include="..\DiscordBot.Core\DiscordBot.Core.csproj" />
     <ProjectReference Include="..\DiscordBot.Escrow\DiscordBot.Escrow.csproj" />
