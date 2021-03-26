@@ -37,7 +37,7 @@ namespace DiscordBot.Awards
                         if (award.IsSpecified)
                         {
                             var awardsChannel = Context.Guild.GetTextChannel(_config.AwardsChannelID);
-                            var awardMessage = await awardsChannel.SendMessageAsync(string.Empty, false, award.Value);
+                            var awardMessage = await awardsChannel.SendMessageAsync(string.Empty, false, award.Value.Build());
                             await _awardService.Transfer(Context.User.Id, author.Id, _config.AwardCoinAmount);
                             await author.SendMessageAsync($"{Context.User.Username} awarded you with {_config.AwardCoinAmount} coins for your post <{award.Value.Url}>");
                         }
@@ -63,7 +63,7 @@ namespace DiscordBot.Awards
         }
 
         [Command("pin")]
-        [Summary("Award a post")]
+        [Summary("Pin a post")]
         public async Task PinPost()
         {
             var funds = await _coinService.GetFundsByUserId(Context.User.Id);
@@ -77,8 +77,9 @@ namespace DiscordBot.Awards
                         var (author, award) = await _awardService.GetAward(Context.Message, Context.User);
                         if (award.IsSpecified)
                         {
+                            var embed = award.Value.WithColor(Color.Gold).Build();
                             var awardsChannel = Context.Guild.GetTextChannel(_config.AwardsChannelID);
-                            var awardMessage = await awardsChannel.SendMessageAsync(string.Empty, false, award.Value);
+                            var awardMessage = await awardsChannel.SendMessageAsync(string.Empty, false, embed);
                             await awardMessage.PinAsync();
                             await _awardService.Transfer(Context.User.Id, author.Id, _config.PinCoinAmount);
                             await author.SendMessageAsync($"{Context.User.Username} awarded you with {_config.PinCoinAmount} coins for your post <{award.Value.Url}>");

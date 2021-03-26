@@ -20,7 +20,7 @@ namespace DiscordBot.Awards
             _client = client ?? throw new ArgumentNullException(nameof(client));
         }
 
-        public async Task<(IUser, Optional<Embed>)> GetAward(SocketUserMessage post, IUser giver)
+        public async Task<(IUser, Optional<EmbedBuilder>)> GetAward(SocketUserMessage post, IUser giver)
         {
             var guild = _client.GetGuild(post.Reference.GuildId.Value);
             var channel = guild.GetTextChannel(post.Reference.ChannelId);
@@ -35,11 +35,11 @@ namespace DiscordBot.Awards
                 .WithDescription($"[{content}]({urlToMessage})\n\nAwarded by {MentionUtils.MentionUser(giver.Id)}.")
                 .WithUrl(urlToMessage)
                 .WithTimestamp(message.EditedTimestamp ?? message.Timestamp);
-                return (message.Author, embed.Build());
+                return (message.Author, embed);
             }
             else
             {
-                return (message.Author, Optional<Embed>.Unspecified);
+                return (message.Author, Optional<EmbedBuilder>.Unspecified);
             }
         }
 
