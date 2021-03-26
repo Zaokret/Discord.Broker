@@ -33,13 +33,13 @@ namespace DiscordBot.Awards
                 {
                     try
                     {
-                        var award = await _awardService.GetAward(Context.Message, Context.User);
+                        var (author, award) = await _awardService.GetAward(Context.Message, Context.User);
                         if (award.IsSpecified)
                         {
                             var awardsChannel = Context.Guild.GetTextChannel(_config.AwardsChannelID);
                             var awardMessage = await awardsChannel.SendMessageAsync(string.Empty, false, award.Value);
-                            await _awardService.Transfer(Context.User.Id, Context.Message.Author.Id, _config.AwardCoinAmount);
-                            await Context.Message.Author.SendMessageAsync($"{Context.User.Username} awarded you with {_config.AwardCoinAmount} coins for your post <{award.Value.Url}>");
+                            await _awardService.Transfer(Context.User.Id, author.Id, _config.AwardCoinAmount);
+                            await author.SendMessageAsync($"{Context.User.Username} awarded you with {_config.AwardCoinAmount} coins for your post <{award.Value.Url}>");
                         }
                         else
                         {
@@ -74,14 +74,14 @@ namespace DiscordBot.Awards
                 {
                     try
                     {
-                        var award = await _awardService.GetAward(Context.Message, Context.User);
+                        var (author, award) = await _awardService.GetAward(Context.Message, Context.User);
                         if (award.IsSpecified)
                         {
                             var awardsChannel = Context.Guild.GetTextChannel(_config.AwardsChannelID);
                             var awardMessage = await awardsChannel.SendMessageAsync(string.Empty, false, award.Value);
                             await awardMessage.PinAsync();
-                            await _awardService.Transfer(Context.User.Id, Context.Message.Author.Id, _config.PinCoinAmount);
-                            await Context.Message.Author.SendMessageAsync($"{Context.User.Username} awarded you with {_config.PinCoinAmount} coins for your post <{award.Value.Url}>");
+                            await _awardService.Transfer(Context.User.Id, author.Id, _config.PinCoinAmount);
+                            await author.SendMessageAsync($"{Context.User.Username} awarded you with {_config.PinCoinAmount} coins for your post <{award.Value.Url}>");
                         }
                         else
                         {
