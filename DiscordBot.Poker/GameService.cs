@@ -77,24 +77,23 @@ namespace DiscordBot.Poker
         private IList<ulong> UserIds { get; set; } = new List<ulong>();
         private Game Game { get; set; }
 
-        
-
         public async Task DelayedStart(ISocketMessageChannel channel, ulong messageId, int buyIn)
         {
             await Task.Delay(30 * 1000);
             var message = await channel.GetMessageAsync(messageId, CacheMode.AllowDownload);
             var users = await message.GetReactionUsersAsync(Emote.Parse("JOIN"), 100).FlattenAsync();
 
-            if(users.Count() < 3)
+            if(users.Count(u => !u.IsBot) < 2)
             {
                 await channel.SendMessageAsync("Not enough players reacted.");
                 return;
             }
 
-            List<IUser> boughtIn = new List<IUser>();
+            List<IUser> canBuyIn = new List<IUser>();
             foreach (var user in users)
             {
-                if (boughtIn.Count < 11)
+                // TODO change hardcoded value
+                if (canBuyIn.Count >= 10)
                 {
                     break;
                 }
@@ -102,14 +101,18 @@ namespace DiscordBot.Poker
                 float funds = await _coinService.GetFundsByUserId(user.Id);
                 if (funds >= buyIn)
                 {
-                    await _coinService.RemoveFunds(user.Id, buyIn);
-                    boughtIn.Add(user);
+                    canBuyIn.Add(user);
                 }
             }
 
-            if (boughtIn.Count > 2)
+            if (canBuyIn.Count > 2)
             {
-                await Start(channel, boughtIn, buyIn);
+                foreach (var user in canBuyIn)
+                {
+                    await _coinService.RemoveFunds(user.Id, buyIn);
+                }
+                
+                await Start(channel, canBuyIn, buyIn);
             }
             else
             {
@@ -131,7 +134,9 @@ namespace DiscordBot.Poker
             // store game into database
             Game = game;
 
-            // play order and next to play and actions
+            NextToPlayBreakdown breakdown = NextToPlay();
+
+            // send breakdown for next to play
             await channel.SendMessageAsync("test");
         }
 
