@@ -53,6 +53,7 @@ namespace DiscordBot.Services
             await _commands.AddModuleAsync(typeof(InfoModule), _provider);
             await _commands.AddModuleAsync(typeof(BetModule), _provider);
             await _commands.AddModuleAsync(typeof(AwardModule), _provider);
+            await _commands.AddModuleAsync(typeof(BotUserModule), _provider);
         }
     }
 }

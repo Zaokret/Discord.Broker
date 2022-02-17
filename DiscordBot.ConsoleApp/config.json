@@ -11,5 +11,6 @@
   "payPal": "https://www.paypal.com/paypalme/attarcoinbroker",
   "awardsChannelID": 825061666462105630,
   "awardCoinAmount": 10,
-  "pinCoinAmount": 100
+  "pinCoinAmount": 100,
+  "moderatorRoleID": 786401637476204574
 }

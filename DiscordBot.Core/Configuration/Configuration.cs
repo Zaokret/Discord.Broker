@@ -12,13 +12,14 @@ namespace DiscordBot
         public char CommandPrefix { get; set; }
         public char TestCommandPrefix { get; set; }
         public ulong AwardsChannelID { get; set; }
+        public ulong ModeratorRoleID { get; set; }
         public int AwardCoinAmount { get; set; }
         public int PinCoinAmount { get; set; }
     }
 
     public class GlobalConfiguration : JsonConfiguration
     {
-        public GlobalConfiguration(string discordToken, string tasteToken, JsonConfiguration jsonConfig)
+        public GlobalConfiguration(string discordToken, string tasteToken, JsonConfiguration jc)
         {
             if (string.IsNullOrWhiteSpace(discordToken))
                 throw new ArgumentNullException(nameof(discordToken));
@@ -26,15 +27,16 @@ namespace DiscordBot
             if (string.IsNullOrWhiteSpace(tasteToken))
                 throw new ArgumentNullException(nameof(tasteToken));
 
-            Coins = jsonConfig.Coins;
-            CommandPrefix = jsonConfig.CommandPrefix;
+            Coins = jc.Coins;
+            CommandPrefix = jc.CommandPrefix;
             DiscordToken = discordToken;
-            PayPalUrl = jsonConfig.PayPal;
+            PayPalUrl = jc.PayPal;
             TasteToken = tasteToken;
-            TestCommandPrefix = jsonConfig.TestCommandPrefix;
-            AwardsChannelID = jsonConfig.AwardsChannelID;
-            AwardCoinAmount = jsonConfig.AwardCoinAmount;
-            PinCoinAmount = jsonConfig.PinCoinAmount;
+            TestCommandPrefix = jc.TestCommandPrefix;
+            AwardsChannelID = jc.AwardsChannelID;
+            AwardCoinAmount = jc.AwardCoinAmount;
+            PinCoinAmount = jc.PinCoinAmount;
+            ModeratorRoleID = jc.ModeratorRoleID;
         }
 
         public ulong BotAuthor = 563437347899965455;
