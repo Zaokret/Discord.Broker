@@ -32,7 +32,7 @@ Bot uses [media recommendation API](https://tastedive.com) to recommend similar 
 
  - $recommend "media term" - shows 5 most similar pieces of media with a text description from wikipedia, link to wikipedia and youtube 
 
-This is a high level overview of the commands and doesn't represent exactly how these commands are used. For the full list of commands and their exact explanation you need to join the server issue command:
+This is a high level overview of the commands and doesn't represent exactly how these commands are used. For the full list of commands and their explanation you need to join the server and issue the command:
 
  - $commands
 
