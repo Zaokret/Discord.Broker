@@ -49,11 +49,7 @@ namespace DiscordBot
       
             provider.GetRequiredService<LoggingService>();      
             provider.GetRequiredService<CommandHandler>();
-
-            if(EnvironmentConfiguration.IsProduction())
-            {
-                provider.GetRequiredService<ReactionController>();
-            }
+            provider.GetRequiredService<ReactionController>();
 
             await provider.GetRequiredService<StartupService>().StartAsync();
         }

@@ -52,6 +52,34 @@ namespace DiscordBot.Modules
             }
         }
         
+        public async Task HandleRoles(
+            LeaderboardView leaderboard, 
+            IEnumerable<RankedUser> newRichMembers, 
+            IEnumerable<SocketGuildUser> richMembers, 
+            SocketRole rich)
+        {
+            foreach (var m in newRichMembers)
+            {
+                var guidUser = Context.Guild?.GetUser(m.User.Id);
+                if (guidUser != null)
+                {
+                    await guidUser.AddRoleAsync(rich);
+                    await Task.Delay(1000);
+                }
+            }
+
+            var oldRichToRemove = richMembers.Where(currently => !leaderboard.TopUsers.Any(c => c.User.Id == currently.Id));
+            foreach (var m in oldRichToRemove)
+            {
+                var guidUser = Context.Guild?.GetUser(m.Id);
+                if (guidUser != null)
+                {
+                    await guidUser.RemoveRoleAsync(rich);
+                    await Task.Delay(1000);
+                }
+            }
+        }
+
         [Command("rich")]
         [Summary("Retreives coins for top 5 users in a leaderboard.")]
         public async Task GetLeaderboard()
@@ -71,26 +99,7 @@ namespace DiscordBot.Modules
             {
                 var richMembers = rich.Members ?? new List<SocketGuildUser>();
                 var newRichMembers = leaderboard.TopUsers.Where(newRich => !richMembers.Any(c => c.Id == newRich.User.Id));
-                await Task.WhenAll(newRichMembers.Select(m =>
-                {
-                    var guidUser = Context.Guild?.GetUser(m.User.Id);
-                    if (guidUser == null) 
-                    {
-                        return Task.CompletedTask;
-                    }
-                    return guidUser.AddRoleAsync(rich);
-                }));
-
-                var oldRichToRemove = richMembers.Where(currently => !leaderboard.TopUsers.Any(c => c.User.Id == currently.Id));
-                await Task.WhenAll(oldRichToRemove.Select(u =>
-                {
-                    var guidUser = Context.Guild?.GetUser(u.Id);
-                    if(guidUser == null)
-                    {
-                        return Task.CompletedTask;
-                    }
-                    return guidUser.RemoveRoleAsync(rich);
-                }));
+                HandleRoles(leaderboard, newRichMembers, richMembers, rich);
             }
 
             leaderboard.TheInfinite = Context.Client.GetUser(698910396093825065);
